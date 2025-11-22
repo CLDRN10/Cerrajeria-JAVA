@@ -1,27 +1,23 @@
 package com.example.demo;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 
-@SpringBootApplication
 public class DemoApplication {
 
-  @Value("${NAME:World}")
-  String name;
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("Gestión de Cerrajería");
+            VistaPrincipal vista = new VistaPrincipal();
+            frame.setContentPane(vista.getMainPanel());
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.pack(); // Ajusta el tamaño de la ventana a los componentes
+            frame.setLocationRelativeTo(null); // Centra la ventana
+            frame.setVisible(true);
 
-  @RestController
-  class HelloworldController {
-    @GetMapping("/")
-    String hello() {
-      return "Hello " + name + "!";
+            // En el futuro, aquí conectaremos la vista con el controlador
+            // ConexionBD conexion = new ConexionBD();
+            // Controlador controlador = new Controlador(vista, conexion);
+        });
     }
-  }
-
-  public static void main(String[] args) {
-    SpringApplication.run(DemoApplication.class, args);
-  }
-
 }
