@@ -1,11 +1,13 @@
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.util.Date;
 
 public class VistaPrincipal {
 
     // --- Componentes vinculados desde el .form ---
-    private JPanel mainPanel;
+    private JPanel rootPanel; // El nuevo panel raíz que centrará todo
+    private JPanel mainPanel; // El panel que contiene la interfaz principal
     private JTabbedPane tabbedPane;
     private JPanel panelRegistrar;
     private JComboBox<String> comboTipoServicio;
@@ -25,9 +27,7 @@ public class VistaPrincipal {
     private JTextField txtNombreOtroCerrajero;
     private JTextField txtTelefonoOtroCerrajero;
 
-
     public VistaPrincipal() {
-        // --- Configuración de componentes que requieren lógica en el arranque ---
         inicializarComponentesLogicos();
         agregarListeners();
     }
@@ -67,14 +67,18 @@ public class VistaPrincipal {
         comboCerrajero.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 String seleccion = (String) e.getItem();
-                panelOtroCerrajero.setVisible("Otro".equals(seleccion));
+                boolean esOtro = "Otro".equals(seleccion);
+                panelOtroCerrajero.setVisible(esOtro);
+
+                // Empaquetar la ventana para ajustar su tamaño
+                SwingUtilities.getWindowAncestor(rootPanel).pack();
             }
         });
     }
 
     // --- Getters para que el Controlador pueda acceder a los componentes ---
 
-    public JPanel getMainPanel() { return mainPanel; }
+    public JPanel getMainPanel() { return rootPanel; } // ¡Devolvemos el panel raíz!
     public JComboBox<String> getComboTipoServicio() { return comboTipoServicio; }
     public JTextField getTxtNombreCliente() { return txtNombreCliente; }
     public JTextField getTxtTelefonoCliente() { return txtTelefonoCliente; }
