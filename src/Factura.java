@@ -1,5 +1,9 @@
 public class Factura {
+
+    //Atributos - Propiedades - Características
     private Servicio servicio;
+
+    //Metodos - Funciones
 
     public Factura(Servicio servicio) {
         this.servicio = servicio;

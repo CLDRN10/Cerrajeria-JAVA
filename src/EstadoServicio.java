@@ -4,21 +4,14 @@ public enum EstadoServicio {
     FINALIZADO("Finalizado correctamente"),
     CANCELADO("Cancelado por el cliente");
 
-    // -------------------
-    // Atributo
-    // -------------------
+    // Atributos - Propiedades - Características
     private final String descripcion;
 
-    // -------------------
-    // Constructor
-    // -------------------
+    //Metodos - Funciones
     EstadoServicio(String descripcion) {
         this.descripcion = descripcion;
     }
 
-    // -------------------
-    // Método
-    // -------------------
     public String getDescripcion() {
         return descripcion;
     }

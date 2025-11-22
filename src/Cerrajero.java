@@ -1,23 +1,17 @@
 public class Cerrajero implements Persona {
-    // -------------------
-    // Atributos
-    // -------------------
+
+    // Atributos - Propiedades - Características
     private Long id_cerrajero;
     private String nombre_ce;
     private String telefono_ce;
 
-    // -------------------
-    // Constructor
-    // -------------------
+    // Métodos - Funciones
     public Cerrajero(Long id_cerrajero, String nombre_ce, String telefono_ce) {
         this.id_cerrajero = id_cerrajero;
         this.nombre_ce = nombre_ce;
         this.telefono_ce = telefono_ce;
     }
 
-    // -------------------
-    // Getters y Setters
-    // -------------------
     public Long getId_cerrajero() {
         return id_cerrajero;
     }
@@ -42,9 +36,6 @@ public class Cerrajero implements Persona {
         this.telefono_ce = telefono_ce;
     }
 
-    // -------------------
-    // Métodos de la interfaz Persona
-    // -------------------
     @Override
     public String getNombre() {
         return nombre_ce;

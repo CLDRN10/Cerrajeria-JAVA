@@ -1,4 +1,5 @@
 import javax.swing.*;
+import java.awt.event.ItemEvent;
 import java.util.Date;
 
 public class VistaPrincipal {
@@ -20,43 +21,55 @@ public class VistaPrincipal {
     private JComboBox<String> comboEstado;
     private JButton btnGuardarServicio;
     private JPanel panelConsultar;
+    private JPanel panelOtroCerrajero;
+    private JTextField txtNombreOtroCerrajero;
+    private JTextField txtTelefonoOtroCerrajero;
+
 
     public VistaPrincipal() {
         // --- Configuración de componentes que requieren lógica en el arranque ---
         inicializarComponentesLogicos();
+        agregarListeners();
     }
 
     private void inicializarComponentesLogicos() {
         // --- Configuración de Spinners ---
-
-        // Configura el Spinner de Fecha
         spinnerFecha.setModel(new SpinnerDateModel());
         JSpinner.DateEditor deFecha = new JSpinner.DateEditor(spinnerFecha, "dd/MM/yyyy");
         spinnerFecha.setEditor(deFecha);
-        spinnerFecha.setValue(new Date()); // Valor inicial: fecha actual
+        spinnerFecha.setValue(new Date());
 
-        // Configura el Spinner de Hora
         spinnerHora.setModel(new SpinnerDateModel());
         JSpinner.DateEditor deHora = new JSpinner.DateEditor(spinnerHora, "hh:mm a");
         spinnerHora.setEditor(deHora);
-        spinnerHora.setValue(new Date()); // Valor inicial: hora actual
+        spinnerHora.setValue(new Date());
 
-        // Configura el Spinner de Valor del Servicio
         spinnerValorServicio.setModel(new SpinnerNumberModel(50000.0, 0.0, 10000000.0, 1000.0));
 
         // --- Carga de datos en ComboBoxes ---
-        comboTipoServicio.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "Apertura de puerta", "Cambio de cerradura", "Instalación de cerrojo", "Reparación"}));
-        comboMunicipio.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "Bogotá", "Medellín", "Cali", "Barranquilla", "Cartagena"}));
-        comboMetodoPago.setModel(new DefaultComboBoxModel<>(new String[]{"Efectivo", "Tarjeta de Crédito", "Tarjeta de Débito", "Transferencia"}));
-        comboCerrajero.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "Carlos Perez", "Ana García", "Luis Rodriguez"}));
+        comboTipoServicio.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "Apertura de automóvil", "Apertura de caja fuerte", "Apertura de candado", "Apertura de motocicleta", "Apertura de puerta residencial", "Cambio de clave de automóvil", "Cambio de clave de motocicleta", "Cambio de clave residencial", "Duplicado de llave", "Elaboración de llaves", "Instalación de alarma", "Instalación de chapa", "Reparación general"}));
+        comboMunicipio.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "Bucaramanga", "Floridablanca", "Piedecuesta"}));
+        comboMetodoPago.setModel(new DefaultComboBoxModel<>(new String[]{"Nequi", "Efectivo"}));
+        comboCerrajero.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "Jose Hernandez", "Otro"}));
 
-        // Llenar el ComboBox de Estados desde el Enum
         DefaultComboBoxModel<String> estadoModel = new DefaultComboBoxModel<>();
         estadoModel.addElement("Seleccionar estado");
         for (EstadoServicio estado : EstadoServicio.values()) {
             estadoModel.addElement(estado.getDescripcion());
         }
         comboEstado.setModel(estadoModel);
+
+        // Ocultar el panel para "Otro" cerrajero por defecto
+        panelOtroCerrajero.setVisible(false);
+    }
+
+    private void agregarListeners() {
+        comboCerrajero.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                String seleccion = (String) e.getItem();
+                panelOtroCerrajero.setVisible("Otro".equals(seleccion));
+            }
+        });
     }
 
     // --- Getters para que el Controlador pueda acceder a los componentes ---
@@ -77,4 +90,7 @@ public class VistaPrincipal {
     public JTabbedPane getTabbedPane() { return tabbedPane; }
     public JPanel getPanelRegistrar() { return panelRegistrar; }
     public JPanel getPanelConsultar() { return panelConsultar; }
+    public JPanel getPanelOtroCerrajero() { return panelOtroCerrajero; }
+    public JTextField getTxtNombreOtroCerrajero() { return txtNombreOtroCerrajero; }
+    public JTextField getTxtTelefonoOtroCerrajero() { return txtTelefonoOtroCerrajero; }
 }

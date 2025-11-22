@@ -1,23 +1,17 @@
 import java.util.List;
 
 public class Empresa {
-    // -------------------
-    // Atributos
-    // -------------------
+   
+    // Atributos - Propiedades - Características
     private String nombre;
     private List<Cerrajero> cerrajeros;
 
-    // -------------------
-    // Constructor
-    // -------------------
+    //Métodos - Funciones
     public Empresa(String nombre, List<Cerrajero> cerrajeros) {
         this.nombre = nombre;
         this.cerrajeros = cerrajeros;
     }
 
-    // -------------------
-    // Getters y Setters
-    // -------------------
     public String getNombre() {
         return nombre;
     }

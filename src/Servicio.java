@@ -3,9 +3,8 @@ import java.sql.Time;
 import java.util.Date;
 
 public class Servicio {
-    // -------------------
-    // Atributos
-    // -------------------
+
+    // Atributos - Propiedades - Características
     private Long id_servicio;
     private Date fecha_s;
     private Time hora_s;
@@ -16,9 +15,7 @@ public class Servicio {
     private Cliente cliente;
     private Cerrajero cerrajero;
 
-    // -------------------
-    // Constructor
-    // -------------------
+    //Metodos - Funciones
     public Servicio(Long id_servicio, Date fecha_s, Time hora_s, String tipo_s, EstadoServicio estado_s, BigDecimal monto_pago, String metodo_pago, Cliente cliente, Cerrajero cerrajero) {
         this.id_servicio = id_servicio;
         this.fecha_s = fecha_s;
@@ -31,9 +28,6 @@ public class Servicio {
         this.cerrajero = cerrajero;
     }
 
-    // -------------------
-    // Getters y Setters
-    // -------------------
     public Long getId_servicio() {
         return id_servicio;
     }

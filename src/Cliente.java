@@ -1,16 +1,13 @@
 public class Cliente implements Persona {
-    // -------------------
-    // Atributos
-    // -------------------
+
+    // Atributos - Propiedades - Características
     private Long id_cliente;
     private String nombre_c;
     private String telefono_c;
     private String direccion_c;
     private String ciudad_c;
 
-    // -------------------
-    // Constructor
-    // -------------------
+    // Métodos - Funciones
     public Cliente(Long id_cliente, String nombre_c, String telefono_c, String direccion_c, String ciudad_c) {
         this.id_cliente = id_cliente;
         this.nombre_c = nombre_c;
@@ -19,9 +16,6 @@ public class Cliente implements Persona {
         this.ciudad_c = ciudad_c;
     }
 
-    // -------------------
-    // Getters y Setters
-    // -------------------
     public Long getId_cliente() {
         return id_cliente;
     }
@@ -62,9 +56,6 @@ public class Cliente implements Persona {
         this.ciudad_c = ciudad_c;
     }
 
-    // -------------------
-    // Métodos de la interfaz Persona
-    // -------------------
     @Override
     public String getNombre() {
         return nombre_c;

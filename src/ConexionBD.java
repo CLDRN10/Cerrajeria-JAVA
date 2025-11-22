@@ -4,25 +4,15 @@ import java.sql.SQLException;
 
 public class ConexionBD {
 
-    // -------------------
-    // Atributos
-    // -------------------
-
+    // Atributos - Propiedades - Caracteristicas
     private Connection connection;
-    private String url = "jdbc:mysql://localhost:3306/cerrajeria"; // Cambia esto por tu URL
-    private String usuario = "root"; // Cambia esto por tu usuario
-    private String contrasena = ""; // Cambia esto por tu contraseña
+    private String url = "postgresql://uuxf0dkhinr6jhmhb8vq:n7qBZj8KPCrUrIam6MSfkwoNVqFzNd@bbuyudlfwnpkhqhq4gls-postgresql.services.clever-cloud.com:50013/bbuyudlfwnpkhqhq4gls"; // Cambia esto por tu URL
+    private String usuario = "uuxf0dkhinr6jhmhb8vq"; // Cambia esto por tu usuario
+    private String contrasena = "n7qBZj8KPCrUrIam6MSfkwoNVqFzNd"; // Cambia esto por tu contraseña
 
-    // -------------------
-    // Constructor
-    // -------------------
-
+    // Métodos - Funciones
     public ConexionBD() {
     }
-
-    // -------------------
-    // Métodos
-    // -------------------
 
     public Connection getConnection() {
         try {
