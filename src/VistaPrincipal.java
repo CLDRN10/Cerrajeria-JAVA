@@ -9,7 +9,7 @@ import java.sql.Time;
 public class VistaPrincipal {
 
     // --- Componentes vinculados desde el .form ---
-    private JPanel rootPanel;
+    private JPanel mainPanel; // Corregido: de rootPanel a mainPanel
     private JTabbedPane tabbedPane;
     private JPanel panelRegistrar;
     private JComboBox<String> comboTipoServicio;
@@ -70,7 +70,7 @@ public class VistaPrincipal {
                 String seleccion = (String) e.getItem();
                 boolean esOtro = "Otro".equals(seleccion);
                 panelOtroCerrajero.setVisible(esOtro);
-                SwingUtilities.getWindowAncestor(rootPanel).pack();
+                SwingUtilities.getWindowAncestor(mainPanel).pack(); // Corregido
             }
         });
 
@@ -78,30 +78,22 @@ public class VistaPrincipal {
     }
 
     private void guardarServicio() {
-        // SQL para la inserción. Las '?' son marcadores de posición para los datos.
         String sql = "INSERT INTO servicios (tipo_servicio, nombre_cliente, telefono_cliente, direccion_cliente, municipio, fecha_servicio, hora_servicio, valor_servicio, metodo_pago, nombre_cerrajero, telefono_cerrajero, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
         Connection conn = null;
         PreparedStatement pstmt = null;
 
         try {
-            // 1. Obtener la conexión a la base de datos
             ConexionBD conexionBD = new ConexionBD();
             conn = conexionBD.getConnection();
-
-            // Iniciar transacción
             conn.setAutoCommit(false);
-
             pstmt = conn.prepareStatement(sql);
 
-            // 2. Recolectar y asignar los datos desde el formulario a la consulta
             pstmt.setString(1, (String) comboTipoServicio.getSelectedItem());
             pstmt.setString(2, txtNombreCliente.getText());
             pstmt.setString(3, txtTelefonoCliente.getText());
             pstmt.setString(4, txtDireccionCliente.getText());
             pstmt.setString(5, (String) comboMunicipio.getSelectedItem());
 
-            // Conversión de fechas y horas de java.util.Date a java.sql.Date/Time
             java.util.Date fechaUtil = (java.util.Date) spinnerFecha.getValue();
             pstmt.setDate(6, new java.sql.Date(fechaUtil.getTime()));
 
@@ -111,7 +103,6 @@ public class VistaPrincipal {
             pstmt.setDouble(8, (Double) spinnerValorServicio.getValue());
             pstmt.setString(9, (String) comboMetodoPago.getSelectedItem());
 
-            // Lógica para cerrajero "Otro"
             if ("Otro".equals(comboCerrajero.getSelectedItem())) {
                 pstmt.setString(10, txtNombreOtroCerrajero.getText());
                 pstmt.setString(11, txtTelefonoOtroCerrajero.getText());
@@ -122,30 +113,24 @@ public class VistaPrincipal {
 
             pstmt.setString(12, (String) comboEstado.getSelectedItem());
 
-            // 3. Ejecutar la consulta
             int filasAfectadas = pstmt.executeUpdate();
-
-            // Confirmar la transacción
             conn.commit();
 
-            // 4. Mostrar mensaje de éxito
             if (filasAfectadas > 0) {
-                JOptionPane.showMessageDialog(rootPanel, "Servicio guardado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(mainPanel, "Servicio guardado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE); // Corregido
             } else {
-                JOptionPane.showMessageDialog(rootPanel, "No se pudo guardar el servicio.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(mainPanel, "No se pudo guardar el servicio.", "Error", JOptionPane.ERROR_MESSAGE); // Corregido
             }
 
         } catch (SQLException ex) {
-            // Si hay un error, revertir la transacción
             try {
                 if (conn != null) conn.rollback();
             } catch (SQLException e) {
                 e.printStackTrace();
             }
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(rootPanel, "Error al guardar en la base de datos: " + ex.getMessage(), "Error de Base de Datos", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(mainPanel, "Error al guardar en la base de datos: " + ex.getMessage(), "Error de Base de Datos", JOptionPane.ERROR_MESSAGE); // Corregido
         } finally {
-            // 5. Cerrar recursos en el bloque finally para asegurar que siempre se cierren
             try {
                 if (pstmt != null) pstmt.close();
                 if (conn != null) conn.close();
@@ -157,7 +142,7 @@ public class VistaPrincipal {
 
     // --- Getters para que el Controlador pueda acceder a los componentes ---
 
-    public JPanel getMainPanel() { return rootPanel; }
+    public JPanel getMainPanel() { return mainPanel; } // Corregido
     public JComboBox<String> getComboTipoServicio() { return comboTipoServicio; }
     public JTextField getTxtNombreCliente() { return txtNombreCliente; }
     public JTextField getTxtTelefonoCliente() { return txtTelefonoCliente; }
