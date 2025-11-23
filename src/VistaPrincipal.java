@@ -1,9 +1,13 @@
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.sql.*;
+import java.util.Vector;
 
 public class VistaPrincipal {
 
@@ -27,6 +31,8 @@ public class VistaPrincipal {
     private JPanel panelOtroCerrajero;
     private JTextField txtNombreOtroCerrajero;
     private JTextField txtTelefonoOtroCerrajero;
+    // --- Componente de tabla añadido ---
+    private JTable tablaServicios;
 
     public VistaPrincipal() {
         inicializarComponentesLogicos();
@@ -67,7 +73,6 @@ public class VistaPrincipal {
                 String seleccion = (String) e.getItem();
                 boolean esOtro = "Otro".equals(seleccion);
                 panelOtroCerrajero.setVisible(esOtro);
-                // Autoajustar el tamaño de la ventana al mostrar/ocultar el panel
                 Window window = SwingUtilities.getWindowAncestor(rootPanel);
                 if (window != null) {
                     window.pack();
@@ -76,31 +81,30 @@ public class VistaPrincipal {
         });
 
         btnGuardarServicio.addActionListener(e -> guardarServicio());
+
+        // --- NUEVO LISTENER: Cargar datos al seleccionar la pestaña de consulta ---
+        tabbedPane.addChangeListener(e -> {
+            if (tabbedPane.getSelectedComponent() == panelConsultar) {
+                cargarServicios();
+            }
+        });
     }
+
     private void reiniciarFormulario() {
-        // Reiniciar campos de texto
         txtNombreCliente.setText("");
         txtTelefonoCliente.setText("");
         txtDireccionCliente.setText("");
         txtNombreOtroCerrajero.setText("");
         txtTelefonoOtroCerrajero.setText("");
-
-        // Reiniciar ComboBoxes a la primera opción "Seleccionar" o por defecto
         comboTipoServicio.setSelectedIndex(0);
         comboMunicipio.setSelectedIndex(0);
         comboCerrajero.setSelectedIndex(0);
         comboMetodoPago.setSelectedIndex(0);
         comboEstado.setSelectedIndex(0);
-
-        // Reiniciar Spinners a la fecha y hora actuales y valor por defecto
         spinnerFecha.setValue(new Date());
         spinnerHora.setValue(new Date());
         spinnerValorServicio.setValue(50000.0);
-
-        // Ocultar el panel de "Otro" cerrajero
         panelOtroCerrajero.setVisible(false);
-
-        // Asegurarse de que la ventana se reajuste si estaba visible el panel de "Otro"
         Window window = SwingUtilities.getWindowAncestor(rootPanel);
         if (window != null) {
             window.pack();
@@ -142,9 +146,8 @@ public class VistaPrincipal {
     }
 
     private void guardarServicio() {
-        // 1. Validar campos antes de hacer nada más
         if (!validarCampos()) {
-            return; // Detiene la ejecución si la validación falla
+            return;
         }
 
         Connection conn = null;
@@ -152,14 +155,11 @@ public class VistaPrincipal {
         long idCerrajero = -1;
 
         try {
-            // 2. Validar y convertir números de teléfono
             long telefonoClienteNum = Long.parseLong(txtTelefonoCliente.getText());
-
             ConexionBD conexionBD = new ConexionBD();
             conn = conexionBD.getConnection();
-            conn.setAutoCommit(false); // Iniciar transacción
+            conn.setAutoCommit(false);
 
-            // 3. Insertar Cliente
             String sqlCliente = "INSERT INTO cliente (nombre_c, telefono_c, direccion_c, ciudad_c) VALUES (?, ?, ?, ?) RETURNING id_cliente";
             try (PreparedStatement pstmtCliente = conn.prepareStatement(sqlCliente)) {
                 pstmtCliente.setString(1, txtNombreCliente.getText());
@@ -171,7 +171,6 @@ public class VistaPrincipal {
                 else { throw new SQLException("No se pudo crear el cliente."); }
             }
 
-            // 4. Gestionar Cerrajero
             String cerrajeroSeleccionado = (String) comboCerrajero.getSelectedItem();
             if ("Otro".equals(cerrajeroSeleccionado)) {
                 long telefonoOtroCerrajeroNum = Long.parseLong(txtTelefonoOtroCerrajero.getText());
@@ -201,7 +200,6 @@ public class VistaPrincipal {
                 }
             }
 
-            // 5. Insertar el Servicio
             String sqlServicio = "INSERT INTO servicio (fecha_s, hora_s, tipo_s, estado_s, monto_pago, metodo_pago, id_cliente, id_cerrajero) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             try (PreparedStatement pstmtServicio = conn.prepareStatement(sqlServicio)) {
                 pstmtServicio.setDate(1, new java.sql.Date(((Date) spinnerFecha.getValue()).getTime()));
@@ -217,9 +215,9 @@ public class VistaPrincipal {
                 }
             }
 
-            conn.commit(); // Confirmar transacción
+            conn.commit();
             JOptionPane.showMessageDialog(rootPanel, "Servicio guardado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            reiniciarFormulario(); // ¡Limpiar el formulario después del éxito!
+            reiniciarFormulario();
 
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(rootPanel, "El teléfono debe ser un número válido y sin puntos ni comas.", "Error de Formato", JOptionPane.ERROR_MESSAGE);
@@ -233,22 +231,63 @@ public class VistaPrincipal {
         }
     }
 
+    // --- NUEVO MÉTODO: Cargar y mostrar los datos en la tabla ---
+    private void cargarServicios() {
+        String[] columnas = {"ID", "Fecha", "Tipo Servicio", "Cliente", "Cerrajero", "Estado", "Monto"};
+        DefaultTableModel modelo = new DefaultTableModel(columnas, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Hace que las celdas no sean editables
+            }
+        };
+
+        String sql = "SELECT s.id_servicio, s.fecha_s, s.tipo_s, c.nombre_c, ce.nombre_ce, s.estado_s, s.monto_pago " +
+                     "FROM servicio s " +
+                     "JOIN cliente c ON s.id_cliente = c.id_cliente " +
+                     "JOIN cerrajero ce ON s.id_cerrajero = ce.id_cerrajero " +
+                     "ORDER BY s.fecha_s DESC, s.hora_s DESC";
+
+        Connection conn = null;
+        try {
+            ConexionBD conexionBD = new ConexionBD();
+            conn = conexionBD.getConnection();
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+
+            while (rs.next()) {
+                Vector<Object> fila = new Vector<>();
+                fila.add(rs.getInt("id_servicio"));
+                fila.add(rs.getDate("fecha_s"));
+                fila.add(rs.getString("tipo_s"));
+                fila.add(rs.getString("nombre_c"));
+                fila.add(rs.getString("nombre_ce"));
+                fila.add(rs.getString("estado_s"));
+                fila.add(rs.getBigDecimal("monto_pago"));
+                modelo.addRow(fila);
+            }
+
+            if (tablaServicios != null) {
+                tablaServicios.setModel(modelo);
+            } else {
+                 JOptionPane.showMessageDialog(rootPanel, "Error: La tabla 'tablaServicios' no se ha inicializado.\nPor favor, asegúrese de haberla añadido en el diseñador del formulario.", "Error de Interfaz", JOptionPane.ERROR_MESSAGE);
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(rootPanel, "Error al cargar los servicios: " + ex.getMessage(), "Error de Base de Datos", JOptionPane.ERROR_MESSAGE);
+        } finally {
+            try { if (conn != null) conn.close(); } catch (SQLException e) { e.printStackTrace(); }
+        }
+    }
+
     public JPanel getMainPanel() { return rootPanel; }
-    // ... (resto de getters sin cambios)
-    public JComboBox<String> getComboTipoServicio() { return comboTipoServicio; }
-    public JTextField getTxtNombreCliente() { return txtNombreCliente; }
-    public JComboBox<String> getComboMunicipio() { return comboMunicipio; }
-    public JSpinner getSpinnerFecha() { return spinnerFecha; }
-    public JSpinner getSpinnerHora() { return spinnerHora; }
-    public JSpinner getSpinnerValorServicio() { return spinnerValorServicio; }
-    public JComboBox<String> getComboMetodoPago() { return comboMetodoPago; }
-    public JComboBox<String> getComboCerrajero() { return comboCerrajero; }
-    public JComboBox<String> getComboEstado() { return comboEstado; }
-    public JButton getBtnGuardarServicio() { return btnGuardarServicio; }
+    // ... (resto de getters) ...
     public JTabbedPane getTabbedPane() { return tabbedPane; }
     public JPanel getPanelRegistrar() { return panelRegistrar; }
     public JPanel getPanelConsultar() { return panelConsultar; }
     public JPanel getPanelOtroCerrajero() { return panelOtroCerrajero; }
     public JTextField getTxtNombreOtroCerrajero() { return txtNombreOtroCerrajero; }
     public JTextField getTxtTelefonoOtroCerrajero() { return txtTelefonoOtroCerrajero; }
+    // --- NUEVO GETTER para la tabla ---
+    public JTable getTablaServicios() { return tablaServicios; }
 }
