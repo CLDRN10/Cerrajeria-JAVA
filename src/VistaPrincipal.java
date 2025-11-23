@@ -9,7 +9,7 @@ import java.sql.Time;
 public class VistaPrincipal {
 
     // --- Componentes vinculados desde el .form ---
-    private JPanel mainPanel; // Corregido: de rootPanel a mainPanel
+    private JPanel rootPanel; // Corregido: de mainPanel de vuelta a rootPanel
     private JTabbedPane tabbedPane;
     private JPanel panelRegistrar;
     private JComboBox<String> comboTipoServicio;
@@ -70,7 +70,7 @@ public class VistaPrincipal {
                 String seleccion = (String) e.getItem();
                 boolean esOtro = "Otro".equals(seleccion);
                 panelOtroCerrajero.setVisible(esOtro);
-                SwingUtilities.getWindowAncestor(mainPanel).pack(); // Corregido
+                SwingUtilities.getWindowAncestor(rootPanel).pack(); // Corregido
             }
         });
 
@@ -117,9 +117,9 @@ public class VistaPrincipal {
             conn.commit();
 
             if (filasAfectadas > 0) {
-                JOptionPane.showMessageDialog(mainPanel, "Servicio guardado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE); // Corregido
+                JOptionPane.showMessageDialog(rootPanel, "Servicio guardado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE); // Corregido
             } else {
-                JOptionPane.showMessageDialog(mainPanel, "No se pudo guardar el servicio.", "Error", JOptionPane.ERROR_MESSAGE); // Corregido
+                JOptionPane.showMessageDialog(rootPanel, "No se pudo guardar el servicio.", "Error", JOptionPane.ERROR_MESSAGE); // Corregido
             }
 
         } catch (SQLException ex) {
@@ -129,7 +129,7 @@ public class VistaPrincipal {
                 e.printStackTrace();
             }
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(mainPanel, "Error al guardar en la base de datos: " + ex.getMessage(), "Error de Base de Datos", JOptionPane.ERROR_MESSAGE); // Corregido
+            JOptionPane.showMessageDialog(rootPanel, "Error al guardar en la base de datos: " + ex.getMessage(), "Error de Base de Datos", JOptionPane.ERROR_MESSAGE); // Corregido
         } finally {
             try {
                 if (pstmt != null) pstmt.close();
@@ -142,11 +142,10 @@ public class VistaPrincipal {
 
     // --- Getters para que el Controlador pueda acceder a los componentes ---
 
-    public JPanel getMainPanel() { return mainPanel; } // Corregido
+    public JPanel getMainPanel() { return rootPanel; } // Corregido
     public JComboBox<String> getComboTipoServicio() { return comboTipoServicio; }
     public JTextField getTxtNombreCliente() { return txtNombreCliente; }
     public JTextField getTxtTelefonoCliente() { return txtTelefonoCliente; }
-    public JTextField getTxtDireccionCliente() { return txtDireccionCliente; }
     public JComboBox<String> getComboMunicipio() { return comboMunicipio; }
     public JSpinner getSpinnerFecha() { return spinnerFecha; }
     public JSpinner getSpinnerHora() { return spinnerHora; }
