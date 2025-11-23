@@ -14,6 +14,7 @@ public class VistaPrincipal {
 
     private Integer idServicioSeleccionado = null;
     private Empresa miEmpresa;
+    private ConexionBD conexionBD;
 
     private JPanel rootPanel;
     private JTabbedPane tabbedPane;
@@ -27,7 +28,7 @@ public class VistaPrincipal {
     private JSpinner spinnerHora;
     private JSpinner spinnerValorServicio;
     private JComboBox<String> comboMetodoPago;
-    private JComboBox<Cerrajero> comboCerrajero;
+    private JComboBox<Object> comboCerrajero;
     private JComboBox<EstadoServicio> comboEstado;
     private JButton btnGuardarServicio;
     private JPanel panelConsultar;
@@ -44,7 +45,8 @@ public class VistaPrincipal {
     private JButton btnMostrarTodos;
 
     public VistaPrincipal() {
-        miEmpresa = new Empresa("Cerrajería La Llave Maestra", new ArrayList<>());
+        this.conexionBD = new ConexionBD();
+        this.miEmpresa = new Empresa("Cerrajería 24 horas", new ArrayList<>());
         inicializarComponentesLogicos();
         agregarListeners();
     }
@@ -58,7 +60,7 @@ public class VistaPrincipal {
         comboTipoServicio.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "Apertura de automóvil", "Apertura de caja fuerte", "Apertura de candado", "Apertura de motocicleta", "Apertura de puerta residencial", "Cambio de clave de automóvil", "Cambio de clave de motocicleta", "Cambio de clave residencial", "Duplicado de llave", "Elaboración de llaves", "Instalación de alarma", "Instalación de chapa", "Reparación general"}));
         comboMunicipio.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "Bucaramanga", "Floridablanca", "Piedecuesta"}));
         comboMetodoPago.setModel(new DefaultComboBoxModel<>(new String[]{"Nequi", "Efectivo"}));
-        
+
         cargarCerrajerosDesdeBD();
 
         comboCerrajero.setRenderer(new DefaultListCellRenderer() {
@@ -94,36 +96,32 @@ public class VistaPrincipal {
 
         Connection conn = null;
         try {
-            conn = new ConexionBD().getConnection();
+            conn = conexionBD.getConnection();
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery("SELECT id_cerrajero, nombre_ce, telefono_ce FROM cerrajero ORDER BY nombre_ce");
-            while(rs.next()) {
+            while (rs.next()) {
                 cerrajerosBD.add(new Cerrajero(
-                    rs.getLong("id_cerrajero"),
-                    rs.getString("nombre_ce"),
-                    String.valueOf(rs.getLong("telefono_ce"))
+                        rs.getLong("id_cerrajero"),
+                        rs.getString("nombre_ce"),
+                        String.valueOf(rs.getLong("telefono_ce"))
                 ));
             }
 
-            // Poblar el ComboBox
             DefaultComboBoxModel<Object> model = new DefaultComboBoxModel<>();
             model.addElement("Seleccionar");
-            for (Cerrajero c : cerrajerosBD) {
+            for (Cerrajero c : miEmpresa.getCerrajeros()) {
                 model.addElement(c);
             }
-            model.addElement("Otro"); // Añadir la opción "Otro" al final
-            comboCerrajero.setModel((ComboBoxModel) model);
+            model.addElement("Otro");
+            comboCerrajero.setModel(model);
 
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(rootPanel, "Error al cargar cerrajeros desde la BD: " + ex.getMessage(), "Error de Conexión", JOptionPane.ERROR_MESSAGE);
             ex.printStackTrace();
         } finally {
-            try { if (conn != null) conn.close(); } catch (SQLException e) { e.printStackTrace(); }
+            conexionBD.closeConnection();
         }
     }
-
-    // ... (El resto de los métodos como agregarListeners, guardarServicio, etc., se mantienen casi iguales
-    // con pequeños ajustes para manejar el objeto Cerrajero del ComboBox)
 
     private void agregarListeners() {
         comboCerrajero.addItemListener(e -> {
@@ -188,6 +186,7 @@ public class VistaPrincipal {
             window.pack();
         }
     }
+
     private boolean validarCampos() {
         if (txtNombreCliente.getText().trim().isEmpty()) { JOptionPane.showMessageDialog(rootPanel, "El nombre del cliente no puede estar vacío.", "Error de Validación", JOptionPane.ERROR_MESSAGE); return false; }
         if (txtTelefonoCliente.getText().trim().isEmpty()) { JOptionPane.showMessageDialog(rootPanel, "El teléfono del cliente no puede estar vacío.", "Error de Validación", JOptionPane.ERROR_MESSAGE); return false; }
@@ -234,7 +233,7 @@ public class VistaPrincipal {
 
         Connection conn = null;
         try {
-            conn = new ConexionBD().getConnection();
+            conn = conexionBD.getConnection();
             conn.setAutoCommit(false);
 
             try (PreparedStatement pstmt = conn.prepareStatement("INSERT INTO cliente (nombre_c, telefono_c, direccion_c, ciudad_c) VALUES (?, ?, ?, ?) RETURNING id_cliente")) {
@@ -266,7 +265,7 @@ public class VistaPrincipal {
                 pstmt.setDate(1, new java.sql.Date(servicio.getFecha().getTime()));
                 pstmt.setTime(2, servicio.getHora());
                 pstmt.setString(3, servicio.getTipo());
-                pstmt.setString(4, servicio.getEstado().name());
+                pstmt.setString(4, servicio.getEstado().getDescripcion());
                 pstmt.setBigDecimal(5, servicio.getMonto());
                 pstmt.setString(6, servicio.getMetodoPago());
                 pstmt.setLong(7, servicio.getCliente().getIdCliente());
@@ -277,20 +276,21 @@ public class VistaPrincipal {
             conn.commit();
             JOptionPane.showMessageDialog(rootPanel, "Servicio guardado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
             reiniciarFormulario();
-            cargarCerrajerosDesdeBD(); // Recargar por si se añadió uno nuevo
+            cargarCerrajerosDesdeBD();
         } catch (Exception ex) {
             try { if (conn != null) conn.rollback(); } catch (SQLException e) { e.printStackTrace(); }
             JOptionPane.showMessageDialog(rootPanel, "Error al guardar en la BD: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             ex.printStackTrace();
         } finally {
-            try { if (conn != null) conn.close(); } catch (SQLException ex) { ex.printStackTrace(); }
+            conexionBD.closeConnection();
         }
     }
+
     private void actualizarServicio() {
         if (idServicioSeleccionado == null || !validarCampos()) return;
         int confirm = JOptionPane.showConfirmDialog(rootPanel, "¿Está seguro de que desea actualizar este servicio?", "Confirmar Actualización", JOptionPane.YES_NO_OPTION);
         if (confirm != JOptionPane.YES_OPTION) return;
-        
+
         Cliente clienteActualizado = new Cliente(
                 txtNombreCliente.getText(),
                 txtTelefonoCliente.getText(),
@@ -300,7 +300,7 @@ public class VistaPrincipal {
 
         Connection conn = null;
         try {
-            conn = new ConexionBD().getConnection();
+            conn = conexionBD.getConnection();
             conn.setAutoCommit(false);
             long idClienteDb;
             try (PreparedStatement pstmt = conn.prepareStatement("SELECT id_cliente FROM servicio WHERE id_servicio = ?")) {
@@ -321,7 +321,7 @@ public class VistaPrincipal {
                 pstmt.setDate(1, new java.sql.Date(((Date) spinnerFecha.getValue()).getTime()));
                 pstmt.setTime(2, new Time(((Date) spinnerHora.getValue()).getTime()));
                 pstmt.setString(3, (String) comboTipoServicio.getSelectedItem());
-                pstmt.setString(4, ((EstadoServicio) comboEstado.getSelectedItem()).name());
+                pstmt.setString(4, ((EstadoServicio) comboEstado.getSelectedItem()).getDescripcion());
                 pstmt.setBigDecimal(5, BigDecimal.valueOf((Double) spinnerValorServicio.getValue()));
                 pstmt.setString(6, (String) comboMetodoPago.getSelectedItem());
                 pstmt.setInt(7, idServicioSeleccionado);
@@ -336,7 +336,7 @@ public class VistaPrincipal {
             JOptionPane.showMessageDialog(rootPanel, "Error al actualizar el servicio: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             ex.printStackTrace();
         } finally {
-            try { if (conn != null) conn.close(); } catch (SQLException ex) { ex.printStackTrace(); }
+            conexionBD.closeConnection();
         }
     }
 
@@ -346,7 +346,7 @@ public class VistaPrincipal {
         if (confirm != JOptionPane.YES_OPTION) return;
         Connection conn = null;
         try {
-            conn = new ConexionBD().getConnection();
+            conn = conexionBD.getConnection();
             try (PreparedStatement pstmt = conn.prepareStatement("DELETE FROM servicio WHERE id_servicio = ?")) {
                 pstmt.setInt(1, idServicioSeleccionado);
                 if (pstmt.executeUpdate() > 0) {
@@ -359,23 +359,23 @@ public class VistaPrincipal {
             JOptionPane.showMessageDialog(rootPanel, "Error al eliminar el servicio: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             ex.printStackTrace();
         } finally {
-            try { if (conn != null) conn.close(); } catch (SQLException ex) { ex.printStackTrace(); }
+            conexionBD.closeConnection();
         }
     }
-    
+
     private void cargarServicios(String filtroCliente) {
         DefaultTableModel modelo = new DefaultTableModel(new String[]{"ID", "Fecha", "Tipo Servicio", "Cliente", "Cerrajero", "Estado", "Monto"}, 0) {
             @Override public boolean isCellEditable(int row, int column) { return false; }
         };
         String sql = "SELECT s.id_servicio, s.fecha_s, s.tipo_s, c.nombre_c, ce.nombre_ce, s.estado_s, s.monto_pago " +
-                     "FROM servicio s JOIN cliente c ON s.id_cliente = c.id_cliente JOIN cerrajero ce ON s.id_cerrajero = ce.id_cerrajero";
+                "FROM servicio s JOIN cliente c ON s.id_cliente = c.id_cliente JOIN cerrajero ce ON s.id_cerrajero = ce.id_cerrajero";
         if (filtroCliente != null && !filtroCliente.isEmpty()) {
             sql += " WHERE c.nombre_c ILIKE ?";
         }
         sql += " ORDER BY s.id_servicio DESC";
         Connection conn = null;
         try {
-            conn = new ConexionBD().getConnection();
+            conn = conexionBD.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql);
             if (filtroCliente != null && !filtroCliente.isEmpty()) {
                 pstmt.setString(1, "%" + filtroCliente + "%");
@@ -398,17 +398,17 @@ public class VistaPrincipal {
             JOptionPane.showMessageDialog(rootPanel, "Error al cargar servicios: " + ex.getMessage(), "Error de BD", JOptionPane.ERROR_MESSAGE);
             ex.printStackTrace();
         } finally {
-            try { if (conn != null) conn.close(); } catch (SQLException e) { e.printStackTrace(); }
+            conexionBD.closeConnection();
         }
     }
 
     private void cargarDatosServicioEnFormulario(int idServicio) {
         String sql = "SELECT s.*, c.id_cliente, c.nombre_c, c.telefono_c, c.direccion_c, c.ciudad_c, ce.id_cerrajero, ce.nombre_ce, ce.telefono_ce " +
-                     "FROM servicio s JOIN cliente c ON s.id_cliente = c.id_cliente JOIN cerrajero ce ON s.id_cerrajero = ce.id_cerrajero " +
-                     "WHERE s.id_servicio = ?";
+                "FROM servicio s JOIN cliente c ON s.id_cliente = c.id_cliente JOIN cerrajero ce ON s.id_cerrajero = ce.id_cerrajero " +
+                "WHERE s.id_servicio = ?";
         Connection conn = null;
         try {
-            conn = new ConexionBD().getConnection();
+            conn = conexionBD.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, idServicio);
             ResultSet rs = pstmt.executeQuery();
@@ -425,7 +425,7 @@ public class VistaPrincipal {
                         rs.getString("nombre_ce"),
                         String.valueOf(rs.getLong("telefono_ce"))
                 );
-                EstadoServicio estado = EstadoServicio.valueOf(rs.getString("estado_s"));
+                EstadoServicio estado = EstadoServicio.fromDescripcion(rs.getString("estado_s"));
 
                 txtNombreCliente.setText(cliente.getNombre());
                 txtTelefonoCliente.setText(cliente.getTelefono());
@@ -438,8 +438,7 @@ public class VistaPrincipal {
                 comboTipoServicio.setSelectedItem(rs.getString("tipo_s"));
                 comboMetodoPago.setSelectedItem(rs.getString("metodo_pago"));
                 comboEstado.setSelectedItem(estado);
-                
-                // Lógica para seleccionar el cerrajero correcto en el ComboBox
+
                 boolean cerrajeroEncontrado = false;
                 for (int i = 0; i < comboCerrajero.getItemCount(); i++) {
                     Object item = comboCerrajero.getItemAt(i);
@@ -462,20 +461,20 @@ public class VistaPrincipal {
             JOptionPane.showMessageDialog(rootPanel, "Error al cargar el detalle del servicio: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             ex.printStackTrace();
         } finally {
-            try { if (conn != null) conn.close(); } catch (SQLException ex) { ex.printStackTrace(); }
+            conexionBD.closeConnection();
         }
     }
 
     private void ajustarAnchoColumnas() {
         tablaServicios.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         TableColumnModel columnModel = tablaServicios.getColumnModel();
-        columnModel.getColumn(0).setPreferredWidth(40); 
-        columnModel.getColumn(1).setPreferredWidth(90);  
-        columnModel.getColumn(2).setPreferredWidth(200); 
-        columnModel.getColumn(3).setPreferredWidth(180); 
-        columnModel.getColumn(4).setPreferredWidth(150); 
-        columnModel.getColumn(5).setPreferredWidth(100); 
-        columnModel.getColumn(6).setPreferredWidth(100); 
+        columnModel.getColumn(0).setPreferredWidth(40);
+        columnModel.getColumn(1).setPreferredWidth(90);
+        columnModel.getColumn(2).setPreferredWidth(200);
+        columnModel.getColumn(3).setPreferredWidth(180);
+        columnModel.getColumn(4).setPreferredWidth(150);
+        columnModel.getColumn(5).setPreferredWidth(100);
+        columnModel.getColumn(6).setPreferredWidth(100);
     }
 
     public JPanel getMainPanel() {

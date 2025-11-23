@@ -5,7 +5,6 @@ import java.util.Date;
 public class Servicio {
 
     // Atributos
-    private Long idServicio;
     private Date fecha;
     private Time hora;
     private String tipo;
@@ -15,19 +14,7 @@ public class Servicio {
     private Cliente cliente;
     private Cerrajero cerrajero;
 
-    // Constructores
-    public Servicio(Long idServicio, Date fecha, Time hora, String tipo, EstadoServicio estado, BigDecimal monto, String metodoPago, Cliente cliente, Cerrajero cerrajero) {
-        this.idServicio = idServicio;
-        this.fecha = fecha;
-        this.hora = hora;
-        this.tipo = tipo;
-        this.estado = estado;
-        this.monto = monto;
-        this.metodoPago = metodoPago;
-        this.cliente = cliente;
-        this.cerrajero = cerrajero;
-    }
-
+    // Constructor
     public Servicio(Date fecha, Time hora, String tipo, EstadoServicio estado, BigDecimal monto, String metodoPago, Cliente cliente, Cerrajero cerrajero) {
         this.fecha = fecha;
         this.hora = hora;
@@ -39,15 +26,7 @@ public class Servicio {
         this.cerrajero = cerrajero;
     }
 
-    // Getters y Setters (Solo los necesarios)
-    public Long getIdServicio() {
-        return idServicio;
-    }
-
-    public void setIdServicio(Long idServicio) {
-        this.idServicio = idServicio;
-    }
-
+    // Getters
     public Date getFecha() { return fecha; }
     public Time getHora() { return hora; }
     public String getTipo() { return tipo; }
