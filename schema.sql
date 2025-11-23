@@ -27,7 +27,7 @@ CREATE TABLE servicio (
     hora_s TIME NOT NULL,
     tipo_s VARCHAR(100) NOT NULL,
     estado_s VARCHAR(20) DEFAULT 'pendiente' 
-        CONSTRAINT ck1_servicio CHECK (estado_s IN ('pendiente', 'en proceso', 'finalizado', 'cancelado')),
+        CONSTRAINT ck1_servicio CHECK ( LOWER(estado_s) IN ('pendiente', 'en proceso', 'finalizado', 'cancelado')),
     monto_pago NUMERIC(10,2) NOT NULL 
         CONSTRAINT ck2_servicio CHECK (monto_pago >= 0),
     metodo_pago VARCHAR(30) NOT NULL 

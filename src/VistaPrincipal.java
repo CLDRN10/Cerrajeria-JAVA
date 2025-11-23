@@ -53,10 +53,10 @@ public class VistaPrincipal {
         comboCerrajero.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "Jose Hernandez", "Otro"})); // A futuro, esto debería cargarse desde la BD
 
         DefaultComboBoxModel<String> estadoModel = new DefaultComboBoxModel<>();
-        estadoModel.addElement("pendiente");
-        estadoModel.addElement("en proceso");
-        estadoModel.addElement("finalizado");
-        estadoModel.addElement("cancelado");
+        estadoModel.addElement("Pendiente");
+        estadoModel.addElement("En proceso");
+        estadoModel.addElement("Finalizado");
+        estadoModel.addElement("Cancelado");
         comboEstado.setModel(estadoModel);
 
         panelOtroCerrajero.setVisible(false);
@@ -81,6 +81,15 @@ public class VistaPrincipal {
         long idCerrajero = -1;
 
         try {
+            // Validar y convertir números de teléfono ANTES de la transacción
+            long telefonoClienteNum;
+            try {
+                telefonoClienteNum = Long.parseLong(txtTelefonoCliente.getText());
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(rootPanel, "El teléfono del cliente debe ser un número válido.", "Error de Formato", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             ConexionBD conexionBD = new ConexionBD();
             conn = conexionBD.getConnection();
             conn.setAutoCommit(false); // Iniciar transacción
@@ -89,7 +98,7 @@ public class VistaPrincipal {
             String sqlCliente = "INSERT INTO cliente (nombre_c, telefono_c, direccion_c, ciudad_c) VALUES (?, ?, ?, ?) RETURNING id_cliente";
             try (PreparedStatement pstmtCliente = conn.prepareStatement(sqlCliente)) {
                 pstmtCliente.setString(1, txtNombreCliente.getText());
-                pstmtCliente.setString(2, txtTelefonoCliente.getText());
+                pstmtCliente.setLong(2, telefonoClienteNum); // Usar el número convertido
                 pstmtCliente.setString(3, txtDireccionCliente.getText());
                 pstmtCliente.setString(4, (String) comboMunicipio.getSelectedItem());
 
@@ -104,10 +113,18 @@ public class VistaPrincipal {
             // 2. Gestionar Cerrajero y obtener su ID
             String cerrajeroSeleccionado = (String) comboCerrajero.getSelectedItem();
             if ("Otro".equals(cerrajeroSeleccionado)) {
+                long telefonoOtroCerrajeroNum;
+                 try {
+                    telefonoOtroCerrajeroNum = Long.parseLong(txtTelefonoOtroCerrajero.getText());
+                } catch (NumberFormatException e) {
+                    JOptionPane.showMessageDialog(rootPanel, "El teléfono del cerrajero 'Otro' debe ser un número válido.", "Error de Formato", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
                 String sqlCerrajero = "INSERT INTO cerrajero (nombre_ce, telefono_ce) VALUES (?, ?) RETURNING id_cerrajero";
                 try (PreparedStatement pstmtCerrajero = conn.prepareStatement(sqlCerrajero)) {
                     pstmtCerrajero.setString(1, txtNombreOtroCerrajero.getText());
-                    pstmtCerrajero.setString(2, txtTelefonoOtroCerrajero.getText());
+                    pstmtCerrajero.setLong(2, telefonoOtroCerrajeroNum); // Usar el número convertido
                     ResultSet rs = pstmtCerrajero.executeQuery();
                     if (rs.next()) {
                         idCerrajero = rs.getLong(1);
@@ -116,10 +133,6 @@ public class VistaPrincipal {
                     }
                 }
             } else {
-                // Asumimos que el cerrajero ya existe. A futuro, se debe mejorar esto.
-                // Aquí podrías hacer un SELECT para buscar el ID, por ahora, usaremos un ID fijo para 'Jose Hernandez' (ej: 1)
-                // ¡¡OJO: Esto requiere que 'Jose Hernandez' exista en la BD con ID=1!!
-                // O podemos buscarlo por nombre:
                 String sqlBuscaCerrajero = "SELECT id_cerrajero FROM cerrajero WHERE nombre_ce = ? LIMIT 1";
                  try (PreparedStatement pstmtBusca = conn.prepareStatement(sqlBuscaCerrajero)){
                     pstmtBusca.setString(1, cerrajeroSeleccionado);
@@ -127,8 +140,8 @@ public class VistaPrincipal {
                     if (rs.next()){
                         idCerrajero = rs.getLong(1);
                     } else {
-                        // Si no existe, podemos crearlo también
-                        String sqlCreaCerrajero = "INSERT INTO cerrajero (nombre_ce, telefono_ce) VALUES (?, '0000000') RETURNING id_cerrajero";
+                        // Si no existe, lo creamos con un teléfono placeholder
+                        String sqlCreaCerrajero = "INSERT INTO cerrajero (nombre_ce, telefono_ce) VALUES (?, 0) RETURNING id_cerrajero";
                         try(PreparedStatement pstmtCrea = conn.prepareStatement(sqlCreaCerrajero)) {
                             pstmtCrea.setString(1, cerrajeroSeleccionado);
                             ResultSet rsCrea = pstmtCrea.executeQuery();
@@ -154,7 +167,6 @@ public class VistaPrincipal {
                 pstmtServicio.setString(3, (String) comboTipoServicio.getSelectedItem());
                 pstmtServicio.setString(4, (String) comboEstado.getSelectedItem());
 
-                // Convertir el Double del spinner a BigDecimal para la BD
                 Double valorSpinner = (Double) spinnerValorServicio.getValue();
                 pstmtServicio.setBigDecimal(5, BigDecimal.valueOf(valorSpinner));
 
@@ -168,18 +180,23 @@ public class VistaPrincipal {
                 }
             }
 
-            conn.commit(); // Confirmar transacción si todo fue exitoso
+            conn.commit(); // Confirmar transacción
             JOptionPane.showMessageDialog(rootPanel, "Servicio guardado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
 
         } catch (SQLException ex) {
             try {
-                if (conn != null) conn.rollback(); // Revertir transacción en caso de error
+                if (conn != null) conn.rollback(); // Revertir en caso de error
             } catch (SQLException e) {
                 e.printStackTrace();
             }
             ex.printStackTrace();
             JOptionPane.showMessageDialog(rootPanel, "Error al guardar en la base de datos: " + ex.getMessage(), "Error de Base de Datos", JOptionPane.ERROR_MESSAGE);
-        } finally {
+        } catch (Exception e) {
+            // Captura cualquier otra excepción inesperada, como la de formato de número
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(rootPanel, "Ha ocurrido un error inesperado: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+        finally {
             try {
                 if (conn != null) conn.close();
             } catch (SQLException ex) {
