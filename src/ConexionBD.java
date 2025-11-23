@@ -4,28 +4,31 @@ import java.sql.SQLException;
 
 public class ConexionBD {
 
-    // Atributos - Propiedades - Caracteristicas
+    // Atributos
     private Connection connection;
-    private String url = "postgresql://uuxf0dkhinr6jhmhb8vq:n7qBZj8KPCrUrIam6MSfkwoNVqFzNd@bbuyudlfwnpkhqhq4gls-postgresql.services.clever-cloud.com:50013/bbuyudlfwnpkhqhq4gls"; // Cambia esto por tu URL
-    private String usuario = "uuxf0dkhinr6jhmhb8vq"; // Cambia esto por tu usuario
-    private String contrasena = "n7qBZj8KPCrUrIam6MSfkwoNVqFzNd"; // Cambia esto por tu contraseña
+    // La URL debe tener el formato jdbc:postgresql://host:port/database
+    private String url = "jdbc:postgresql://bbuyudlfwnpkhqhq4gls-postgresql.services.clever-cloud.com:50013/bbuyudlfwnpkhqhq4gls";
+    private String usuario = "uuxf0dkhinr6jhmhb8vq";
+    private String contrasena = "n7qBZj8KPCrUrIam6MSfkwoNVqFzNd";
 
-    // Métodos - Funciones
     public ConexionBD() {
     }
 
     public Connection getConnection() {
         try {
             if (connection == null || connection.isClosed()) {
-                // Cargar el driver de MySQL
-                Class.forName("com.mysql.cj.jdbc.Driver");
+                // La carga del driver es automática con JDBC 4.0+ si la dependencia está en el pom.xml
+                // Class.forName("org.postgresql.Driver"); // No es necesario
+                
                 // Establecer la conexión
                 connection = DriverManager.getConnection(url, usuario, contrasena);
-                System.out.println("Conexión exitosa a la base de datos.");
+                System.out.println("Conexión exitosa a la base de datos PostgreSQL.");
             }
-        } catch (ClassNotFoundException | SQLException e) {
+        } catch (SQLException e) {
             System.err.println("Error al conectar a la base de datos: " + e.getMessage());
             e.printStackTrace();
+            // Relanzamos la excepción para que el código que llama se entere del problema
+            throw new RuntimeException(e);
         }
         return connection;
     }
