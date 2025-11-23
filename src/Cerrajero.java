@@ -1,6 +1,6 @@
 public class Cerrajero implements Persona {
 
-    // Atributos con convención camelCase
+    // Atributos
     private Long idCerrajero;
     private String nombre;
     private String telefono;
@@ -28,20 +28,12 @@ public class Cerrajero implements Persona {
         return telefono;
     }
 
-    // Getters y Setters de la clase Cerrajero
+    // Getters y Setters (Solo los necesarios)
     public Long getIdCerrajero() {
         return idCerrajero;
     }
 
     public void setIdCerrajero(Long idCerrajero) {
         this.idCerrajero = idCerrajero;
-    }
-
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
-
-    public void setTelefono(String telefono) {
-        this.telefono = telefono;
     }
 }

@@ -4,7 +4,7 @@ import java.util.Date;
 
 public class Servicio {
 
-    // Atributos con convención camelCase y nombres simplificados
+    // Atributos
     private Long idServicio;
     private Date fecha;
     private Time hora;
@@ -12,12 +12,10 @@ public class Servicio {
     private EstadoServicio estado;
     private BigDecimal monto;
     private String metodoPago;
-    
-    // --- Composición: Un servicio TIENE UN Cliente y UN Cerrajero ---
     private Cliente cliente;
     private Cerrajero cerrajero;
 
-    // Constructor completo
+    // Constructores
     public Servicio(Long idServicio, Date fecha, Time hora, String tipo, EstadoServicio estado, BigDecimal monto, String metodoPago, Cliente cliente, Cerrajero cerrajero) {
         this.idServicio = idServicio;
         this.fecha = fecha;
@@ -30,7 +28,6 @@ public class Servicio {
         this.cerrajero = cerrajero;
     }
 
-    // Constructor para servicios nuevos (sin ID inicial)
     public Servicio(Date fecha, Time hora, String tipo, EstadoServicio estado, BigDecimal monto, String metodoPago, Cliente cliente, Cerrajero cerrajero) {
         this.fecha = fecha;
         this.hora = hora;
@@ -42,7 +39,7 @@ public class Servicio {
         this.cerrajero = cerrajero;
     }
 
-    // Getters y Setters
+    // Getters y Setters (Solo los necesarios)
     public Long getIdServicio() {
         return idServicio;
     }
@@ -51,67 +48,12 @@ public class Servicio {
         this.idServicio = idServicio;
     }
 
-    public Date getFecha() {
-        return fecha;
-    }
-
-    public void setFecha(Date fecha) {
-        this.fecha = fecha;
-    }
-
-    public Time getHora() {
-        return hora;
-    }
-
-    public void setHora(Time hora) {
-        this.hora = hora;
-    }
-
-    public String getTipo() {
-        return tipo;
-    }
-
-    public void setTipo(String tipo) {
-        this.tipo = tipo;
-    }
-
-    public EstadoServicio getEstado() {
-        return estado;
-    }
-
-    public void setEstado(EstadoServicio estado) {
-        this.estado = estado;
-    }
-
-    public BigDecimal getMonto() {
-        return monto;
-    }
-
-    public void setMonto(BigDecimal monto) {
-        this.monto = monto;
-    }
-
-    public String getMetodoPago() {
-        return metodoPago;
-    }
-
-    public void setMetodoPago(String metodoPago) {
-        this.metodoPago = metodoPago;
-    }
-
-    public Cliente getCliente() {
-        return cliente;
-    }
-
-    public void setCliente(Cliente cliente) {
-        this.cliente = cliente;
-    }
-
-    public Cerrajero getCerrajero() {
-        return cerrajero;
-    }
-
-    public void setCerrajero(Cerrajero cerrajero) {
-        this.cerrajero = cerrajero;
-    }
+    public Date getFecha() { return fecha; }
+    public Time getHora() { return hora; }
+    public String getTipo() { return tipo; }
+    public EstadoServicio getEstado() { return estado; }
+    public BigDecimal getMonto() { return monto; }
+    public String getMetodoPago() { return metodoPago; }
+    public Cliente getCliente() { return cliente; }
+    public Cerrajero getCerrajero() { return cerrajero; }
 }

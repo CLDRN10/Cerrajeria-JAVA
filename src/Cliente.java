@@ -1,6 +1,6 @@
 public class Cliente implements Persona {
 
-    // Atributos con convención camelCase
+    // Atributos
     private Long idCliente;
     private String nombre;
     private String telefono;
@@ -34,7 +34,7 @@ public class Cliente implements Persona {
         return telefono;
     }
 
-    // Getters y Setters de la clase Cliente
+    // Getters y Setters (Solo los necesarios)
     public Long getIdCliente() {
         return idCliente;
     }
@@ -43,27 +43,11 @@ public class Cliente implements Persona {
         this.idCliente = idCliente;
     }
 
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
-
-    public void setTelefono(String telefono) {
-        this.telefono = telefono;
-    }
-
     public String getDireccion() {
         return direccion;
     }
 
-    public void setDireccion(String direccion) {
-        this.direccion = direccion;
-    }
-
     public String getCiudad() {
         return ciudad;
-    }
-
-    public void setCiudad(String ciudad) {
-        this.ciudad = ciudad;
     }
 }
