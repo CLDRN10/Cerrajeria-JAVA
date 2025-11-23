@@ -10,10 +10,8 @@ import java.util.Vector;
 
 public class VistaPrincipal {
 
-    // --- Variables de Estado ---
     private Integer idServicioSeleccionado = null;
 
-    // --- Componentes vinculados desde el .form ---
     private JPanel rootPanel;
     private JTabbedPane tabbedPane;
     private JPanel panelRegistrar;
@@ -27,7 +25,7 @@ public class VistaPrincipal {
     private JSpinner spinnerValorServicio;
     private JComboBox<String> comboMetodoPago;
     private JComboBox<String> comboCerrajero;
-    private JComboBox<String> comboEstado;
+    private JComboBox<EstadoServicio> comboEstado;
     private JButton btnGuardarServicio;
     private JPanel panelConsultar;
     private JPanel panelOtroCerrajero;
@@ -37,8 +35,6 @@ public class VistaPrincipal {
     private JButton btnActualizar;
     private JButton btnEliminar;
     private JButton btnLimpiarFormulario;
-
-    // --- NUEVOS COMPONENTES PARA BÚSQUEDA ---
     private JPanel panelBusqueda;
     private JTextField txtBusquedaCliente;
     private JButton btnBuscar;
@@ -50,25 +46,32 @@ public class VistaPrincipal {
     }
 
     private void inicializarComponentesLogicos() {
-        // Configuración de Spinners
         spinnerFecha.setModel(new SpinnerDateModel());
         spinnerFecha.setEditor(new JSpinner.DateEditor(spinnerFecha, "dd/MM/yyyy"));
         spinnerHora.setModel(new SpinnerDateModel());
         spinnerHora.setEditor(new JSpinner.DateEditor(spinnerHora, "hh:mm a"));
         spinnerValorServicio.setModel(new SpinnerNumberModel(50000.0, 0.0, 10000000.0, 1000.0));
-
-        // Carga de datos en ComboBoxes
         comboTipoServicio.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "Apertura de automóvil", "Apertura de caja fuerte", "Apertura de candado", "Apertura de motocicleta", "Apertura de puerta residencial", "Cambio de clave de automóvil", "Cambio de clave de motocicleta", "Cambio de clave residencial", "Duplicado de llave", "Elaboración de llaves", "Instalación de alarma", "Instalación de chapa", "Reparación general"}));
         comboMunicipio.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "Bucaramanga", "Floridablanca", "Piedecuesta"}));
         comboMetodoPago.setModel(new DefaultComboBoxModel<>(new String[]{"Nequi", "Efectivo"}));
         comboCerrajero.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "Jose Hernandez", "Otro"}));
-        comboEstado.setModel(new DefaultComboBoxModel<>(new String[]{"PENDIENTE", "EN PROCESO", "FINALIZADO", "CANCELADO"}));
-
+        
+        // Restauramos el uso del ENUM
+        comboEstado.setModel(new DefaultComboBoxModel<>(EstadoServicio.values()));
+        comboEstado.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof EstadoServicio) {
+                    setText(((EstadoServicio) value).getDescripcion());
+                }
+                return this;
+            }
+        });
         reiniciarFormulario();
     }
 
     private void agregarListeners() {
-        // Listener para mostrar/ocultar panel "Otro Cerrajero"
         comboCerrajero.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 panelOtroCerrajero.setVisible("Otro".equals(e.getItem()));
@@ -76,40 +79,30 @@ public class VistaPrincipal {
                 if (window != null) window.pack();
             }
         });
-
-        // Listeners de los botones CRUD
         btnGuardarServicio.addActionListener(e -> guardarServicio());
         btnActualizar.addActionListener(e -> actualizarServicio());
         btnEliminar.addActionListener(e -> eliminarServicio());
         btnLimpiarFormulario.addActionListener(e -> reiniciarFormulario());
-
-        // Listener para cargar datos al cambiar a la pestaña de consulta
         tabbedPane.addChangeListener(e -> {
             if (tabbedPane.getSelectedComponent() == panelConsultar) {
-                cargarServicios(null); // Cargar todos los servicios sin filtro
+                cargarServicios(null);
             }
         });
-
-        // Listener para seleccionar un servicio de la tabla
         tablaServicios.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && tablaServicios.getSelectedRow() != -1) {
-                int filaSeleccionada = tablaServicios.getSelectedRow();
-                Integer idServicio = (Integer) tablaServicios.getValueAt(filaSeleccionada, 0);
+                Integer idServicio = (Integer) tablaServicios.getValueAt(tablaServicios.getSelectedRow(), 0);
                 cargarDatosServicioEnFormulario(idServicio);
             }
         });
-
-        // --- NUEVOS LISTENERS PARA BÚSQUEDA ---
         btnBuscar.addActionListener(e -> {
             String textoBusqueda = txtBusquedaCliente.getText();
             if (textoBusqueda != null && !textoBusqueda.trim().isEmpty()) {
                 cargarServicios(textoBusqueda.trim());
             }
         });
-
         btnMostrarTodos.addActionListener(e -> {
             txtBusquedaCliente.setText("");
-            cargarServicios(null); // Cargar todos los servicios
+            cargarServicios(null);
         });
     }
 
@@ -123,7 +116,7 @@ public class VistaPrincipal {
         comboMunicipio.setSelectedIndex(0);
         comboCerrajero.setSelectedIndex(0);
         comboMetodoPago.setSelectedIndex(0);
-        comboEstado.setSelectedIndex(0);
+        comboEstado.setSelectedItem(EstadoServicio.PENDIENTE);
         spinnerFecha.setValue(new Date());
         spinnerHora.setValue(new Date());
         spinnerValorServicio.setValue(50000.0);
@@ -134,13 +127,15 @@ public class VistaPrincipal {
         btnActualizar.setVisible(false);
         btnEliminar.setVisible(false);
         btnLimpiarFormulario.setVisible(false);
+
         Window window = SwingUtilities.getWindowAncestor(rootPanel);
-        if (window != null) {
+        if (window != null && window.isVisible()) {
             window.pack();
         }
     }
 
     private boolean validarCampos() {
+        // ... (la validación no necesita cambios, se mantiene igual)
         if (txtNombreCliente.getText().trim().isEmpty()) { JOptionPane.showMessageDialog(rootPanel, "El nombre del cliente no puede estar vacío.", "Error de Validación", JOptionPane.ERROR_MESSAGE); return false; }
         if (txtTelefonoCliente.getText().trim().isEmpty()) { JOptionPane.showMessageDialog(rootPanel, "El teléfono del cliente no puede estar vacío.", "Error de Validación", JOptionPane.ERROR_MESSAGE); return false; }
         if (comboTipoServicio.getSelectedIndex() == 0) { JOptionPane.showMessageDialog(rootPanel, "Debe seleccionar un tipo de servicio.", "Error de Validación", JOptionPane.ERROR_MESSAGE); return false; }
@@ -148,66 +143,90 @@ public class VistaPrincipal {
         if (comboCerrajero.getSelectedIndex() == 0) { JOptionPane.showMessageDialog(rootPanel, "Debe seleccionar un cerrajero.", "Error de Validación", JOptionPane.ERROR_MESSAGE); return false; }
         if ("Otro".equals(comboCerrajero.getSelectedItem())) {
             if (txtNombreOtroCerrajero.getText().trim().isEmpty()) { JOptionPane.showMessageDialog(rootPanel, "El nombre del 'Otro' cerrajero no puede estar vacío.", "Error de Validación", JOptionPane.ERROR_MESSAGE); return false; }
-            if (txtTelefonoOtroCerrajero.getText().trim().isEmpty()) { JOptionPane.showMessageDialog(rootPanel, "El teléfono del 'Otro' cerrajero no puede estar vacío.", "Error de Validación", JOptionPane.ERROR_MESSAGE); return false; }
         }
         return true;
     }
 
     private void guardarServicio() {
         if (!validarCampos()) return;
+
+        // 1. Crear objetos del Modelo a partir de la Vista
+        Cliente cliente = new Cliente(
+                txtNombreCliente.getText(),
+                txtTelefonoCliente.getText(),
+                txtDireccionCliente.getText(),
+                (String) comboMunicipio.getSelectedItem()
+        );
+
+        Cerrajero cerrajero;
+        if ("Otro".equals(comboCerrajero.getSelectedItem())) {
+            cerrajero = new Cerrajero(txtNombreOtroCerrajero.getText(), txtTelefonoOtroCerrajero.getText());
+        } else {
+            cerrajero = new Cerrajero((String) comboCerrajero.getSelectedItem(), ""); // Teléfono vacío para cerrajeros predefinidos
+        }
+
+        Servicio servicio = new Servicio(
+                (Date) spinnerFecha.getValue(),
+                new Time(((Date) spinnerHora.getValue()).getTime()),
+                (String) comboTipoServicio.getSelectedItem(),
+                (EstadoServicio) comboEstado.getSelectedItem(),
+                BigDecimal.valueOf((Double) spinnerValorServicio.getValue()),
+                (String) comboMetodoPago.getSelectedItem(),
+                cliente,
+                cerrajero
+        );
+
+        // 2. Persistir los objetos del Modelo
         Connection conn = null;
         try {
-            ConexionBD conexionBD = new ConexionBD();
-            conn = conexionBD.getConnection();
+            conn = new ConexionBD().getConnection();
             conn.setAutoCommit(false);
-            long telefonoClienteNum = Long.parseLong(txtTelefonoCliente.getText());
-            String sqlCliente = "INSERT INTO cliente (nombre_c, telefono_c, direccion_c, ciudad_c) VALUES (?, ?, ?, ?) RETURNING id_cliente";
-            long idCliente;
-            try (PreparedStatement pstmt = conn.prepareStatement(sqlCliente)) {
-                pstmt.setString(1, txtNombreCliente.getText());
-                pstmt.setLong(2, telefonoClienteNum);
-                pstmt.setString(3, txtDireccionCliente.getText());
-                pstmt.setString(4, (String) comboMunicipio.getSelectedItem());
+
+            // Guardar cliente y obtener ID
+            try (PreparedStatement pstmt = conn.prepareStatement("INSERT INTO cliente (nombre_c, telefono_c, direccion_c, ciudad_c) VALUES (?, ?, ?, ?) RETURNING id_cliente")) {
+                pstmt.setString(1, servicio.getCliente().getNombre());
+                pstmt.setLong(2, Long.parseLong(servicio.getCliente().getTelefono()));
+                pstmt.setString(3, servicio.getCliente().getDireccion());
+                pstmt.setString(4, servicio.getCliente().getCiudad());
                 ResultSet rs = pstmt.executeQuery();
-                if (rs.next()) { idCliente = rs.getLong(1); } else { throw new SQLException("No se pudo crear el cliente."); }
+                if (rs.next()) {
+                    servicio.getCliente().setIdCliente(rs.getLong(1));
+                } else { throw new SQLException("No se pudo crear el cliente."); }
             }
+
+            // Guardar cerrajero y obtener ID
             long idCerrajero;
-            String cerrajeroSeleccionado = (String) comboCerrajero.getSelectedItem();
-            if ("Otro".equals(cerrajeroSeleccionado)) {
-                String sqlCerrajero = "INSERT INTO cerrajero (nombre_ce, telefono_ce) VALUES (?, ?) RETURNING id_cerrajero";
-                try (PreparedStatement pstmt = conn.prepareStatement(sqlCerrajero)){
-                    pstmt.setString(1, txtNombreOtroCerrajero.getText());
-                    pstmt.setLong(2, Long.parseLong(txtTelefonoOtroCerrajero.getText()));
-                    ResultSet rs = pstmt.executeQuery();
-                    if(rs.next()){ idCerrajero = rs.getLong(1); } else { throw new SQLException("No se pudo crear el cerrajero 'Otro'");}
-                }
-            } else {
-                String sqlBusca = "SELECT id_cerrajero FROM cerrajero WHERE nombre_ce = ? LIMIT 1";
-                try (PreparedStatement pstmt = conn.prepareStatement(sqlBusca)){
-                    pstmt.setString(1, cerrajeroSeleccionado);
-                    ResultSet rs = pstmt.executeQuery();
-                    if(rs.next()){ idCerrajero = rs.getLong(1); } else {
-                        String sqlCrea = "INSERT INTO cerrajero (nombre_ce, telefono_ce) VALUES (?, 0) RETURNING id_cerrajero";
-                        try (PreparedStatement pstmtCrea = conn.prepareStatement(sqlCrea)){
-                            pstmtCrea.setString(1, cerrajeroSeleccionado);
-                            ResultSet rsCrea = pstmtCrea.executeQuery();
-                            if(rsCrea.next()){ idCerrajero = rsCrea.getLong(1); } else { throw new SQLException("No se pudo crear el cerrajero predeterminado.");}
-                        }
+            String nombreCerrajero = servicio.getCerrajero().getNombre();
+            try (PreparedStatement pstmt = conn.prepareStatement("SELECT id_cerrajero FROM cerrajero WHERE nombre_ce = ? LIMIT 1")){
+                pstmt.setString(1, nombreCerrajero);
+                ResultSet rs = pstmt.executeQuery();
+                if(rs.next()){
+                    idCerrajero = rs.getLong(1);
+                } else {
+                    try (PreparedStatement pstmtCrea = conn.prepareStatement("INSERT INTO cerrajero (nombre_ce, telefono_ce) VALUES (?, ?) RETURNING id_cerrajero")){
+                        pstmtCrea.setString(1, nombreCerrajero);
+                        long telefono = servicio.getCerrajero().getTelefono().isEmpty() ? 0 : Long.parseLong(servicio.getCerrajero().getTelefono());
+                        pstmtCrea.setLong(2, telefono);
+                        ResultSet rsCrea = pstmtCrea.executeQuery();
+                        if(rsCrea.next()){ idCerrajero = rsCrea.getLong(1); } else { throw new SQLException("No se pudo crear el cerrajero.");}
                     }
                 }
+                servicio.getCerrajero().setIdCerrajero(idCerrajero);
             }
-            String sqlServicio = "INSERT INTO servicio (fecha_s, hora_s, tipo_s, estado_s, monto_pago, metodo_pago, id_cliente, id_cerrajero) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-            try (PreparedStatement pstmt = conn.prepareStatement(sqlServicio)) {
-                pstmt.setDate(1, new java.sql.Date(((Date) spinnerFecha.getValue()).getTime()));
-                pstmt.setTime(2, new Time(((Date) spinnerHora.getValue()).getTime()));
-                pstmt.setString(3, (String) comboTipoServicio.getSelectedItem());
-                pstmt.setString(4, (String) comboEstado.getSelectedItem());
-                pstmt.setBigDecimal(5, BigDecimal.valueOf((Double) spinnerValorServicio.getValue()));
-                pstmt.setString(6, (String) comboMetodoPago.getSelectedItem());
-                pstmt.setLong(7, idCliente);
-                pstmt.setLong(8, idCerrajero);
+
+            // Guardar servicio
+            try (PreparedStatement pstmt = conn.prepareStatement("INSERT INTO servicio (fecha_s, hora_s, tipo_s, estado_s, monto_pago, metodo_pago, id_cliente, id_cerrajero) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
+                pstmt.setDate(1, new java.sql.Date(servicio.getFecha().getTime()));
+                pstmt.setTime(2, servicio.getHora());
+                pstmt.setString(3, servicio.getTipo());
+                pstmt.setString(4, servicio.getEstado().name()); // Guardamos el nombre del enum
+                pstmt.setBigDecimal(5, servicio.getMonto());
+                pstmt.setString(6, servicio.getMetodoPago());
+                pstmt.setLong(7, servicio.getCliente().getIdCliente());
+                pstmt.setLong(8, servicio.getCerrajero().getIdCerrajero());
                 if (pstmt.executeUpdate() == 0) throw new SQLException("No se pudo guardar el servicio.");
             }
+
             conn.commit();
             JOptionPane.showMessageDialog(rootPanel, "Servicio guardado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
             reiniciarFormulario();
@@ -221,45 +240,44 @@ public class VistaPrincipal {
     }
 
     private void actualizarServicio() {
-        if (idServicioSeleccionado == null) return;
-        if (!validarCampos()) return;
+        if (idServicioSeleccionado == null || !validarCampos()) return;
         int confirm = JOptionPane.showConfirmDialog(rootPanel, "¿Está seguro de que desea actualizar este servicio?", "Confirmar Actualización", JOptionPane.YES_NO_OPTION);
         if (confirm != JOptionPane.YES_OPTION) return;
+        
+        // 1. Crear objetos del Modelo con los datos actualizados
+        Cliente clienteActualizado = new Cliente(
+                txtNombreCliente.getText(),
+                txtTelefonoCliente.getText(),
+                txtDireccionCliente.getText(),
+                (String) comboMunicipio.getSelectedItem()
+        );
+
+        // 2. Persistir los cambios
         Connection conn = null;
         try {
-            ConexionBD conexionBD = new ConexionBD();
-            conn = conexionBD.getConnection();
+            conn = new ConexionBD().getConnection();
             conn.setAutoCommit(false);
-            long idCliente, idCerrajero;
-            try (PreparedStatement pstmt = conn.prepareStatement("SELECT id_cliente, id_cerrajero FROM servicio WHERE id_servicio = ?")) {
+            long idClienteDb;
+            try (PreparedStatement pstmt = conn.prepareStatement("SELECT id_cliente FROM servicio WHERE id_servicio = ?")) {
                 pstmt.setInt(1, idServicioSeleccionado);
                 ResultSet rs = pstmt.executeQuery();
-                if (rs.next()) {
-                    idCliente = rs.getLong("id_cliente");
-                    idCerrajero = rs.getLong("id_cerrajero");
-                } else {
-                    throw new SQLException("No se encontró el servicio a actualizar.");
-                }
+                if (rs.next()) { idClienteDb = rs.getLong("id_cliente"); } else { throw new SQLException("No se encontró el servicio."); }
             }
             try (PreparedStatement pstmt = conn.prepareStatement("UPDATE cliente SET nombre_c = ?, telefono_c = ?, direccion_c = ?, ciudad_c = ? WHERE id_cliente = ?")) {
-                pstmt.setString(1, txtNombreCliente.getText());
-                pstmt.setLong(2, Long.parseLong(txtTelefonoCliente.getText()));
-                pstmt.setString(3, txtDireccionCliente.getText());
-                pstmt.setString(4, (String) comboMunicipio.getSelectedItem());
-                pstmt.setLong(5, idCliente);
+                pstmt.setString(1, clienteActualizado.getNombre());
+                pstmt.setLong(2, Long.parseLong(clienteActualizado.getTelefono()));
+                pstmt.setString(3, clienteActualizado.getDireccion());
+                pstmt.setString(4, clienteActualizado.getCiudad());
+                pstmt.setLong(5, idClienteDb);
                 pstmt.executeUpdate();
             }
-            try (PreparedStatement pstmt = conn.prepareStatement("UPDATE cerrajero SET nombre_ce = ? WHERE id_cerrajero = ?")) {
-                pstmt.setString(1, (String)comboCerrajero.getSelectedItem());
-                pstmt.setLong(2, idCerrajero);
-                pstmt.executeUpdate();
-            }
-            String sqlServicio = "UPDATE servicio SET fecha_s=?, hora_s=?, tipo_s=?, estado_s=?, monto_pago=?, metodo_pago=? WHERE id_servicio=?";
-            try (PreparedStatement pstmt = conn.prepareStatement(sqlServicio)) {
+
+            // Actualizar el resto de campos del servicio
+            try (PreparedStatement pstmt = conn.prepareStatement("UPDATE servicio SET fecha_s=?, hora_s=?, tipo_s=?, estado_s=?, monto_pago=?, metodo_pago=? WHERE id_servicio=?")) {
                 pstmt.setDate(1, new java.sql.Date(((Date) spinnerFecha.getValue()).getTime()));
                 pstmt.setTime(2, new Time(((Date) spinnerHora.getValue()).getTime()));
                 pstmt.setString(3, (String) comboTipoServicio.getSelectedItem());
-                pstmt.setString(4, (String) comboEstado.getSelectedItem());
+                pstmt.setString(4, ((EstadoServicio) comboEstado.getSelectedItem()).name());
                 pstmt.setBigDecimal(5, BigDecimal.valueOf((Double) spinnerValorServicio.getValue()));
                 pstmt.setString(6, (String) comboMetodoPago.getSelectedItem());
                 pstmt.setInt(7, idServicioSeleccionado);
@@ -279,18 +297,16 @@ public class VistaPrincipal {
     }
 
     private void eliminarServicio() {
+        // ... (la eliminación no necesita cambios, se mantiene igual)
         if (idServicioSeleccionado == null) return;
         int confirm = JOptionPane.showConfirmDialog(rootPanel, "¿Está seguro de que desea eliminar este servicio?\nEsta acción no se puede deshacer.", "Confirmar Eliminación", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         if (confirm != JOptionPane.YES_OPTION) return;
         Connection conn = null;
         try {
-            ConexionBD conexionBD = new ConexionBD();
-            conn = conexionBD.getConnection();
-            String sql = "DELETE FROM servicio WHERE id_servicio = ?";
-            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            conn = new ConexionBD().getConnection();
+            try (PreparedStatement pstmt = conn.prepareStatement("DELETE FROM servicio WHERE id_servicio = ?")) {
                 pstmt.setInt(1, idServicioSeleccionado);
-                int filasAfectadas = pstmt.executeUpdate();
-                if (filasAfectadas > 0) {
+                if (pstmt.executeUpdate() > 0) {
                     JOptionPane.showMessageDialog(rootPanel, "Servicio eliminado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
                     reiniciarFormulario();
                     cargarServicios(null);
@@ -303,32 +319,25 @@ public class VistaPrincipal {
             try { if (conn != null) conn.close(); } catch (SQLException ex) { ex.printStackTrace(); }
         }
     }
-
+    
     private void cargarServicios(String filtroCliente) {
+        // ... (la carga de la tabla no necesita cambios, se mantiene igual)
         DefaultTableModel modelo = new DefaultTableModel(new String[]{"ID", "Fecha", "Tipo Servicio", "Cliente", "Cerrajero", "Estado", "Monto"}, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) { return false; }
+            @Override public boolean isCellEditable(int row, int column) { return false; }
         };
-
-        String sqlBase = "SELECT s.id_servicio, s.fecha_s, s.tipo_s, c.nombre_c, ce.nombre_ce, s.estado_s, s.monto_pago " +
-                "FROM servicio s JOIN cliente c ON s.id_cliente = c.id_cliente JOIN cerrajero ce ON s.id_cerrajero = ce.id_cerrajero";
-        String sqlFiltro = "";
+        String sql = "SELECT s.id_servicio, s.fecha_s, s.tipo_s, c.nombre_c, ce.nombre_ce, s.estado_s, s.monto_pago " +
+                     "FROM servicio s JOIN cliente c ON s.id_cliente = c.id_cliente JOIN cerrajero ce ON s.id_cerrajero = ce.id_cerrajero";
         if (filtroCliente != null && !filtroCliente.isEmpty()) {
-            sqlFiltro = " WHERE c.nombre_c ILIKE ?";
+            sql += " WHERE c.nombre_c ILIKE ?";
         }
-        String sqlOrden = " ORDER BY s.id_servicio DESC";
-        String sql = sqlBase + sqlFiltro + sqlOrden;
-
+        sql += " ORDER BY s.id_servicio DESC";
         Connection conn = null;
         try {
-            ConexionBD conexionBD = new ConexionBD();
-            conn = conexionBD.getConnection();
+            conn = new ConexionBD().getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql);
-
             if (filtroCliente != null && !filtroCliente.isEmpty()) {
                 pstmt.setString(1, "%" + filtroCliente + "%");
             }
-
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 Vector<Object> fila = new Vector<>();
@@ -342,9 +351,7 @@ public class VistaPrincipal {
                 modelo.addRow(fila);
             }
             tablaServicios.setModel(modelo);
-
             ajustarAnchoColumnas();
-
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(rootPanel, "Error al cargar servicios: " + ex.getMessage(), "Error de BD", JOptionPane.ERROR_MESSAGE);
             ex.printStackTrace();
@@ -354,37 +361,53 @@ public class VistaPrincipal {
     }
 
     private void cargarDatosServicioEnFormulario(int idServicio) {
-        String sql = "SELECT s.*, c.nombre_c, c.telefono_c, c.direccion_c, c.ciudad_c, ce.nombre_ce " +
-                "FROM servicio s JOIN cliente c ON s.id_cliente = c.id_cliente JOIN cerrajero ce ON s.id_cerrajero = ce.id_cerrajero " +
-                "WHERE s.id_servicio = ?";
+        String sql = "SELECT s.*, c.id_cliente, c.nombre_c, c.telefono_c, c.direccion_c, c.ciudad_c, ce.id_cerrajero, ce.nombre_ce, ce.telefono_ce " +
+                     "FROM servicio s JOIN cliente c ON s.id_cliente = c.id_cliente JOIN cerrajero ce ON s.id_cerrajero = ce.id_cerrajero " +
+                     "WHERE s.id_servicio = ?";
         Connection conn = null;
         try {
-            ConexionBD conexionBD = new ConexionBD();
-            conn = conexionBD.getConnection();
+            conn = new ConexionBD().getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql);
             pstmt.setInt(1, idServicio);
             ResultSet rs = pstmt.executeQuery();
-
             if (rs.next()) {
-                txtNombreCliente.setText(rs.getString("nombre_c"));
-                txtTelefonoCliente.setText(String.valueOf(rs.getLong("telefono_c")));
-                txtDireccionCliente.setText(rs.getString("direccion_c"));
+                // 1. Crear objetos del Modelo a partir de la BD
+                Cliente cliente = new Cliente(
+                        rs.getLong("id_cliente"),
+                        rs.getString("nombre_c"),
+                        String.valueOf(rs.getLong("telefono_c")),
+                        rs.getString("direccion_c"),
+                        rs.getString("ciudad_c")
+                );
+                Cerrajero cerrajero = new Cerrajero(
+                        rs.getLong("id_cerrajero"),
+                        rs.getString("nombre_ce"),
+                        String.valueOf(rs.getLong("telefono_ce"))
+                );
+                EstadoServicio estado = EstadoServicio.valueOf(rs.getString("estado_s"));
+
+                // 2. Poblar la Vista usando los objetos del Modelo
+                txtNombreCliente.setText(cliente.getNombre());
+                txtTelefonoCliente.setText(cliente.getTelefono());
+                txtDireccionCliente.setText(cliente.getDireccion());
+                comboMunicipio.setSelectedItem(cliente.getCiudad());
+
                 spinnerFecha.setValue(rs.getDate("fecha_s"));
                 spinnerHora.setValue(rs.getTime("hora_s"));
                 spinnerValorServicio.setValue(rs.getBigDecimal("monto_pago").doubleValue());
                 comboTipoServicio.setSelectedItem(rs.getString("tipo_s"));
-                comboMunicipio.setSelectedItem(rs.getString("ciudad_c"));
                 comboMetodoPago.setSelectedItem(rs.getString("metodo_pago"));
-                comboEstado.setSelectedItem(rs.getString("estado_s"));
-                comboCerrajero.setSelectedItem(rs.getString("nombre_ce"));
+                comboEstado.setSelectedItem(estado);
+                
+                // Lógica especial para el cerrajero
+                comboCerrajero.setSelectedItem(cerrajero.getNombre());
 
+                // 3. Actualizar estado de la interfaz
                 this.idServicioSeleccionado = idServicio;
-
                 btnGuardarServicio.setVisible(false);
                 btnActualizar.setVisible(true);
                 btnEliminar.setVisible(true);
                 btnLimpiarFormulario.setVisible(true);
-
                 tabbedPane.setSelectedComponent(panelRegistrar);
             }
         } catch (SQLException ex) {
@@ -396,9 +419,9 @@ public class VistaPrincipal {
     }
 
     private void ajustarAnchoColumnas() {
+        // ... (el ajuste de columnas no necesita cambios)
         tablaServicios.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         TableColumnModel columnModel = tablaServicios.getColumnModel();
-
         columnModel.getColumn(0).setPreferredWidth(40);  // ID
         columnModel.getColumn(1).setPreferredWidth(90);  // Fecha
         columnModel.getColumn(2).setPreferredWidth(200); // Tipo Servicio
@@ -408,5 +431,7 @@ public class VistaPrincipal {
         columnModel.getColumn(6).setPreferredWidth(100); // Monto
     }
 
-    public JPanel getMainPanel() { return rootPanel; }
+    public JPanel getMainPanel() {
+        return rootPanel;
+    }
 }

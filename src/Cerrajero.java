@@ -1,48 +1,47 @@
 public class Cerrajero implements Persona {
 
-    // Atributos - Propiedades - Características
-    private Long id_cerrajero;
-    private String nombre_ce;
-    private String telefono_ce;
+    // Atributos con convención camelCase
+    private Long idCerrajero;
+    private String nombre;
+    private String telefono;
 
-    // Métodos - Funciones
-    public Cerrajero(Long id_cerrajero, String nombre_ce, String telefono_ce) {
-        this.id_cerrajero = id_cerrajero;
-        this.nombre_ce = nombre_ce;
-        this.telefono_ce = telefono_ce;
+    // Constructores
+    public Cerrajero(Long idCerrajero, String nombre, String telefono) {
+        this.idCerrajero = idCerrajero;
+        this.nombre = nombre;
+        this.telefono = telefono;
     }
 
-    public Long getId_cerrajero() {
-        return id_cerrajero;
+    public Cerrajero(String nombre, String telefono) {
+        this.nombre = nombre;
+        this.telefono = telefono;
     }
 
-    public void setId_cerrajero(Long id_cerrajero) {
-        this.id_cerrajero = id_cerrajero;
-    }
-
-    public String getNombre_ce() {
-        return nombre_ce;
-    }
-
-    public void setNombre_ce(String nombre_ce) {
-        this.nombre_ce = nombre_ce;
-    }
-
-    public String getTelefono_ce() {
-        return telefono_ce;
-    }
-
-    public void setTelefono_ce(String telefono_ce) {
-        this.telefono_ce = telefono_ce;
-    }
-
+    // Métodos de la interfaz Persona
     @Override
     public String getNombre() {
-        return nombre_ce;
+        return nombre;
     }
 
     @Override
     public String getTelefono() {
-        return telefono_ce;
+        return telefono;
+    }
+
+    // Getters y Setters de la clase Cerrajero
+    public Long getIdCerrajero() {
+        return idCerrajero;
+    }
+
+    public void setIdCerrajero(Long idCerrajero) {
+        this.idCerrajero = idCerrajero;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
     }
 }
