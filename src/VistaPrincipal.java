@@ -1,4 +1,5 @@
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.math.BigDecimal;
 import java.util.Date;
@@ -67,7 +68,10 @@ public class VistaPrincipal {
                 boolean esOtro = "Otro".equals(seleccion);
                 panelOtroCerrajero.setVisible(esOtro);
                 // Autoajustar el tamaño de la ventana al mostrar/ocultar el panel
-                SwingUtilities.getWindowAncestor(rootPanel).pack();
+                Window window = SwingUtilities.getWindowAncestor(rootPanel);
+                if (window != null) {
+                    window.pack();
+                }
             }
         });
 
@@ -97,7 +101,10 @@ public class VistaPrincipal {
         panelOtroCerrajero.setVisible(false);
 
         // Asegurarse de que la ventana se reajuste si estaba visible el panel de "Otro"
-        SwingUtilities.getWindowAncestor(rootPanel).pack();
+        Window window = SwingUtilities.getWindowAncestor(rootPanel);
+        if (window != null) {
+            window.pack();
+        }
     }
 
     private boolean validarCampos() {
@@ -230,7 +237,6 @@ public class VistaPrincipal {
     // ... (resto de getters sin cambios)
     public JComboBox<String> getComboTipoServicio() { return comboTipoServicio; }
     public JTextField getTxtNombreCliente() { return txtNombreCliente; }
-    public JTextField getTxtTelefonoCliente() { return txtTelefonoCliente; }
     public JComboBox<String> getComboMunicipio() { return comboMunicipio; }
     public JSpinner getSpinnerFecha() { return spinnerFecha; }
     public JSpinner getSpinnerHora() { return spinnerHora; }
