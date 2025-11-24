@@ -22,7 +22,7 @@ public class VistaPrincipal {
 
     // --- ATRIBUTOS DE ESTADO ---
     private Integer idServicioSeleccionado = null;
-    private Cliente clienteSeleccionado = null; // Guarda el objeto Cliente que se está editando
+    private Cliente clienteSeleccionado = null; 
     private final Empresa miEmpresa;
 
     // --- COMPONENTES SWING ---
@@ -57,32 +57,28 @@ public class VistaPrincipal {
         this.miEmpresa = new Empresa("Cerrajería 24 horas");
         inicializarComponentesVisuales();
         agregarListeners();
-        cargarServicios(null); // Carga inicial al abrir la app
+        cargarServicios(null); 
     }
 
     private void inicializarComponentesVisuales() {
-        // Configuración de Spinners
         spinnerFecha.setModel(new SpinnerDateModel());
         spinnerFecha.setEditor(new JSpinner.DateEditor(spinnerFecha, "dd/MM/yyyy"));
         spinnerHora.setModel(new SpinnerDateModel());
         spinnerHora.setEditor(new JSpinner.DateEditor(spinnerHora, "hh:mm a"));
         spinnerValorServicio.setModel(new SpinnerNumberModel(50000.0, 0.0, 10000000.0, 1000.0));
 
-        // Configuración de ComboBoxes fijos
         comboTipoServicio.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "Apertura de puerta", "Instalación de cerradura", "Cambio de guardas", "Mantenimiento"}));
         comboMunicipio.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"}));
         comboMetodoPago.setModel(new DefaultComboBoxModel<>(new String[]{"Efectivo", "Nequi", "Bancolombia", "Daviplata"}));
 
-        // Carga de datos dinámicos
         cargarCerrajeros();
         configurarRenderers();
 
-        tablaServicios.setDefaultEditor(Object.class, null); // Tabla no editable
+        tablaServicios.setDefaultEditor(Object.class, null); 
         reiniciarFormulario();
     }
 
     private void configurarRenderers() {
-        // Renderer para mostrar el nombre del cerrajero en el ComboBox
         comboCerrajero.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -96,7 +92,6 @@ public class VistaPrincipal {
             }
         });
 
-        // Renderer para mostrar la descripción del estado en el ComboBox
         comboEstado.setModel(new DefaultComboBoxModel<>(EstadoServicio.values()));
         comboEstado.setRenderer(new DefaultListCellRenderer() {
             @Override
@@ -187,7 +182,7 @@ public class VistaPrincipal {
         btnLimpiarFormulario.setText("Limpiar Formulario");
 
         tablaServicios.clearSelection();
-        if (rootPanel.isDisplayable()) { // Evita error si la ventana aún no se ha mostrado
+        if (rootPanel.isDisplayable()) {
              SwingUtilities.getWindowAncestor(rootPanel).pack();
         }
     }
@@ -220,35 +215,32 @@ public class VistaPrincipal {
         if (!validarCampos()) return;
 
         try {
-            // Se crea un NUEVO cliente con los datos del formulario
             Cliente cliente = new Cliente(
-                txtNombreCliente.getText().trim(), 
-                txtTelefonoCliente.getText().trim(), 
-                txtDireccionCliente.getText().trim(), 
+                txtNombreCliente.getText().trim(),
+                txtTelefonoCliente.getText().trim(),
+                txtDireccionCliente.getText().trim(),
                 (String) comboMunicipio.getSelectedItem()
             );
 
             Cerrajero cerrajero;
             if (comboCerrajero.getSelectedItem() instanceof Cerrajero) {
                 cerrajero = (Cerrajero) comboCerrajero.getSelectedItem();
-            } else { // Es "Otro", se crea un NUEVO cerrajero
+            } else {
                 cerrajero = new Cerrajero(txtNombreOtroCerrajero.getText().trim(), txtTelefonoOtroCerrajero.getText().trim());
             }
 
             Servicio servicio = new Servicio(
-                    (String) comboTipoServicio.getSelectedItem(),
-                    txtDireccionCliente.getText().trim(),
-                    (String) comboMunicipio.getSelectedItem(),
                     new java.sql.Date(((Date) spinnerFecha.getValue()).getTime()),
                     new Time(((Date) spinnerHora.getValue()).getTime()),
+                    (String) comboTipoServicio.getSelectedItem(),
+                    (EstadoServicio) comboEstado.getSelectedItem(),
                     BigDecimal.valueOf((Double) spinnerValorServicio.getValue()),
                     (String) comboMetodoPago.getSelectedItem(),
-                    (EstadoServicio) comboEstado.getSelectedItem(),
                     cliente,
                     cerrajero
             );
 
-            servicio.guardar(); // El método guardar se encarga de la transacción
+            servicio.guardar();
 
             JOptionPane.showMessageDialog(rootPanel, "Servicio guardado con éxito.", "Operación Exitosa", JOptionPane.INFORMATION_MESSAGE);
             reiniciarFormulario();
@@ -257,45 +249,43 @@ public class VistaPrincipal {
 
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(rootPanel, "Error al guardar: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
         }
     }
 
     private void actualizarServicio() {
         if (idServicioSeleccionado == null || clienteSeleccionado == null) return;
         if (!validarCampos()) return;
-        
+
         int confirmacion = JOptionPane.showConfirmDialog(rootPanel, "¿Está seguro de que desea actualizar este servicio?", "Confirmar Actualización", JOptionPane.YES_NO_OPTION);
         if (confirmacion != JOptionPane.YES_OPTION) return;
 
         try {
-            // Se actualizan los datos del objeto Cliente que ya teníamos
             clienteSeleccionado.setNombre(txtNombreCliente.getText().trim());
             clienteSeleccionado.setTelefono(txtTelefonoCliente.getText().trim());
             clienteSeleccionado.setDireccion(txtDireccionCliente.getText().trim());
             clienteSeleccionado.setCiudad((String) comboMunicipio.getSelectedItem());
-            
+
             Cerrajero cerrajero;
             if (comboCerrajero.getSelectedItem() instanceof Cerrajero) {
                 cerrajero = (Cerrajero) comboCerrajero.getSelectedItem();
-            } else { // Es "Otro"
+            } else { 
                 cerrajero = new Cerrajero(txtNombreOtroCerrajero.getText().trim(), txtTelefonoOtroCerrajero.getText().trim());
             }
 
             Servicio servicioActualizado = new Servicio(
                     idServicioSeleccionado,
-                    (String) comboTipoServicio.getSelectedItem(),
-                    txtDireccionCliente.getText().trim(),
-                    (String) comboMunicipio.getSelectedItem(),
                     new java.sql.Date(((Date) spinnerFecha.getValue()).getTime()),
                     new Time(((Date) spinnerHora.getValue()).getTime()),
+                    (String) comboTipoServicio.getSelectedItem(),
+                    (EstadoServicio) comboEstado.getSelectedItem(),
                     BigDecimal.valueOf((Double) spinnerValorServicio.getValue()),
                     (String) comboMetodoPago.getSelectedItem(),
-                    (EstadoServicio) comboEstado.getSelectedItem(),
-                    clienteSeleccionado, // Se pasa el objeto Cliente existente y actualizado
+                    clienteSeleccionado,
                     cerrajero
             );
 
-            servicioActualizado.actualizar(); // El método se encarga de la transacción
+            servicioActualizado.actualizar();
 
             JOptionPane.showMessageDialog(rootPanel, "Servicio actualizado con éxito.", "Operación Exitosa", JOptionPane.INFORMATION_MESSAGE);
             reiniciarFormulario();
@@ -304,6 +294,7 @@ public class VistaPrincipal {
 
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(rootPanel, "Error al actualizar: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
         }
     }
 
@@ -328,7 +319,7 @@ public class VistaPrincipal {
             DefaultTableModel modelo = new DefaultTableModel() {
                 @Override public boolean isCellEditable(int row, int column) { return false; }
             };
-            modelo.setColumnIdentifiers(new Object[]{"ID", "Cliente", "Teléfono", "Tipo", "Estado", "Fecha"});
+            modelo.setColumnIdentifiers(new Object[]{"ID", "Fecha", "Tipo", "Cliente", "Cerrajero", "Estado", "Monto"});
             
             for (Vector<Object> fila : Servicio.listarServicios(filtroCliente)) {
                 modelo.addRow(fila);
@@ -347,10 +338,8 @@ public class VistaPrincipal {
             Servicio servicio = Servicio.cargarPorId(idServicio);
             if (servicio == null) return;
 
-            // Guardamos el cliente completo para poder actualizarlo después
             this.clienteSeleccionado = servicio.getCliente();
 
-            // Rellenar campos del formulario
             comboTipoServicio.setSelectedItem(servicio.getTipo());
             txtNombreCliente.setText(clienteSeleccionado.getNombre());
             txtTelefonoCliente.setText(clienteSeleccionado.getTelefono());
@@ -358,30 +347,28 @@ public class VistaPrincipal {
             comboMunicipio.setSelectedItem(clienteSeleccionado.getCiudad());
             spinnerFecha.setValue(servicio.getFecha());
             spinnerHora.setValue(servicio.getHora());
-            spinnerValorServicio.setValue(servicio.getValor().doubleValue());
+            spinnerValorServicio.setValue(servicio.getMonto().doubleValue());
             comboMetodoPago.setSelectedItem(servicio.getMetodoPago());
             comboEstado.setSelectedItem(servicio.getEstado());
 
-            // Lógica para seleccionar el cerrajero correcto
             boolean cerrajeroEncontrado = false;
             for (int i = 0; i < comboCerrajero.getItemCount(); i++) {
                 if (comboCerrajero.getItemAt(i) instanceof Cerrajero) {
                     Cerrajero c = (Cerrajero) comboCerrajero.getItemAt(i);
-                    if (Objects.equals(c.getId(), servicio.getCerrajero().getId())) {
+                    if (Objects.equals(c.getIdCerrajero(), servicio.getCerrajero().getIdCerrajero())) {
                         comboCerrajero.setSelectedIndex(i);
                         cerrajeroEncontrado = true;
                         break;
                     }
                 }
             }
-            if (!cerrajeroEncontrado) { // Si el cerrajero no está en la lista
+            if (!cerrajeroEncontrado) {
                 comboCerrajero.setSelectedItem("Otro");
                 txtNombreOtroCerrajero.setText(servicio.getCerrajero().getNombre());
                 txtTelefonoOtroCerrajero.setText(servicio.getCerrajero().getTelefono());
                 panelOtroCerrajero.setVisible(true);
             }
 
-            // Ajustar botones y cambiar de pestaña
             btnGuardarServicio.setVisible(false);
             btnActualizar.setVisible(true);
             btnEliminar.setVisible(true);
@@ -395,12 +382,13 @@ public class VistaPrincipal {
 
     private void ajustarAnchoColumnas() {
         TableColumnModel modeloColumna = tablaServicios.getColumnModel();
-        modeloColumna.getColumn(0).setMaxWidth(60); // ID
-        modeloColumna.getColumn(1).setPreferredWidth(200); // Cliente
-        modeloColumna.getColumn(2).setPreferredWidth(120); // Teléfono
-        modeloColumna.getColumn(3).setPreferredWidth(180); // Tipo
-        modeloColumna.getColumn(4).setPreferredWidth(120); // Estado
-        modeloColumna.getColumn(5).setPreferredWidth(100); // Fecha
+        modeloColumna.getColumn(0).setMaxWidth(50);
+        modeloColumna.getColumn(1).setPreferredWidth(90);
+        modeloColumna.getColumn(2).setPreferredWidth(150);
+        modeloColumna.getColumn(3).setPreferredWidth(150);
+        modeloColumna.getColumn(4).setPreferredWidth(150);
+        modeloColumna.getColumn(5).setPreferredWidth(110);
+        modeloColumna.getColumn(6).setPreferredWidth(100);
     }
 
     public JPanel getMainPanel() {
