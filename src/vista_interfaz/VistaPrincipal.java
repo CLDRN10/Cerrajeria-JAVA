@@ -1,8 +1,5 @@
 package vista_interfaz;
 
-// --- IMPORTACIONES ---
-// Se importan las clases necesarias: las del modelo de lógica para manejar los datos,
-// las de Swing para la interfaz gráfica, y otras utilidades de Java.
 import modelo_logica.Cerrajero;
 import modelo_logica.Cliente;
 import modelo_logica.Empresa;
@@ -18,35 +15,20 @@ import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.util.Date;
+import java.util.Objects;
 import java.util.Vector;
 
-/**
- * ==================================================================
- * CLASE VistaPrincipal
- * ==================================================================
- * Es la clase principal de la interfaz de usuario. Controla todos los
- * elementos visuales de la ventana y gestiona la interacción con el usuario.
- * 
- * PROPÓSITO:
- * Actúa como la "VISTA" en una arquitectura similar a MVC. Sus responsabilidades son:
- * 1.  Mostrar los datos que le proporcionan las clases del modelo (ej: mostrar servicios en la tabla).
- * 2.  Capturar las acciones del usuario (clics en botones, texto introducido, etc.).
- * 3.  Recopilar los datos del formulario y pasárselos a las clases del modelo para que las procesen.
- * 
- * Esta clase NO contiene lógica de negocio ni consultas SQL. Simplemente "delega" el trabajo
- * a los objetos del paquete `modelo_logica`, logrando así la descentralización.
- */
 public class VistaPrincipal {
 
-    // --- ATRIBUTOS DE LA CLASE ---
-    private Integer idServicioSeleccionado = null; // Guarda el ID del servicio que se selecciona en la tabla.
-    private Empresa miEmpresa; // Una instancia de la clase Empresa para acceder a la lista de cerrajeros.
+    // --- ATRIBUTOS DE ESTADO ---
+    private Integer idServicioSeleccionado = null;
+    private Cliente clienteSeleccionado = null; // Guarda el objeto Cliente que se está editando
+    private final Empresa miEmpresa;
 
-    // --- COMPONENTES SWING (GENERADOS POR EL DISEÑADOR) ---
-    // Cada uno de estos atributos corresponde a un elemento de la interfaz gráfica.
-    private JPanel rootPanel; // El panel principal que contiene todo lo demás.
-    private JTabbedPane tabbedPane; // El contenedor con las pestañas "Registrar" y "Consultar".
-    private JPanel panelRegistrar; // La pestaña para crear y modificar servicios.
+    // --- COMPONENTES SWING ---
+    private JPanel rootPanel;
+    private JTabbedPane tabbedPane;
+    private JPanel panelRegistrar;
     private JComboBox<String> comboTipoServicio;
     private JTextField txtNombreCliente;
     private JTextField txtTelefonoCliente;
@@ -56,57 +38,51 @@ public class VistaPrincipal {
     private JSpinner spinnerHora;
     private JSpinner spinnerValorServicio;
     private JComboBox<String> comboMetodoPago;
-    private JComboBox<Object> comboCerrajero; // Es de tipo <Object> porque puede contener Strings y objetos Cerrajero.
-    private JComboBox<EstadoServicio> comboEstado; // Contiene los valores del Enum EstadoServicio.
+    private JComboBox<Object> comboCerrajero;
+    private JComboBox<EstadoServicio> comboEstado;
     private JButton btnGuardarServicio;
-    private JPanel panelConsultar; // La pestaña para ver la tabla de servicios.
-    private JPanel panelOtroCerrajero; // Un panel que se muestra u oculta si se elige "Otro" cerrajero.
+    private JPanel panelConsultar;
+    private JPanel panelOtroCerrajero;
     private JTextField txtNombreOtroCerrajero;
     private JTextField txtTelefonoOtroCerrajero;
-    private JTable tablaServicios; // La tabla que muestra la lista de servicios.
+    private JTable tablaServicios;
     private JButton btnActualizar;
     private JButton btnEliminar;
     private JButton btnLimpiarFormulario;
-    private JPanel panelBusqueda;
     private JTextField txtBusquedaCliente;
     private JButton btnBuscar;
     private JButton btnMostrarTodos;
 
-    /**
-     * --- CONSTRUCTOR ---
-     * Se ejecuta al crear la `VistaPrincipal`. Inicializa los componentes y
-     * configura los "listeners" para responder a las acciones del usuario.
-     */
     public VistaPrincipal() {
         this.miEmpresa = new Empresa("Cerrajería 24 horas");
-        inicializarComponentesLogicos();
+        inicializarComponentesVisuales();
         agregarListeners();
+        cargarServicios(null); // Carga inicial al abrir la app
     }
 
-    /**
-     * --- MÉTODO inicializarComponentesLogicos ---
-     * Configura los modelos y renderizadores de los componentes Swing que lo necesitan.
-     * Por ejemplo, define el formato de fecha para los JSpinner o carga los datos
-     * iniciales en los JComboBox.
-     */
-    private void inicializarComponentesLogicos() {
-        // Configuración de los spinners para fecha, hora y número.
+    private void inicializarComponentesVisuales() {
+        // Configuración de Spinners
         spinnerFecha.setModel(new SpinnerDateModel());
         spinnerFecha.setEditor(new JSpinner.DateEditor(spinnerFecha, "dd/MM/yyyy"));
         spinnerHora.setModel(new SpinnerDateModel());
         spinnerHora.setEditor(new JSpinner.DateEditor(spinnerHora, "hh:mm a"));
         spinnerValorServicio.setModel(new SpinnerNumberModel(50000.0, 0.0, 10000000.0, 1000.0));
 
-        // Carga de los items en los ComboBox con opciones fijas.
-        comboTipoServicio.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "..."}));
-        comboMunicipio.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "Bucaramanga", "..."}));
-        comboMetodoPago.setModel(new DefaultComboBoxModel<>(new String[]{"Nequi", "Efectivo"}));
+        // Configuración de ComboBoxes fijos
+        comboTipoServicio.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "Apertura de puerta", "Instalación de cerradura", "Cambio de guardas", "Mantenimiento"}));
+        comboMunicipio.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"}));
+        comboMetodoPago.setModel(new DefaultComboBoxModel<>(new String[]{"Efectivo", "Nequi", "Bancolombia", "Daviplata"}));
 
-        // Llama al método para cargar los cerrajeros desde la base de datos.
+        // Carga de datos dinámicos
         cargarCerrajeros();
+        configurarRenderers();
 
-        // Configura cómo se debe mostrar cada item en el ComboBox de cerrajeros.
-        // Si el item es un objeto Cerrajero, muestra su nombre. Si es un String (como "Otro"), lo muestra tal cual.
+        tablaServicios.setDefaultEditor(Object.class, null); // Tabla no editable
+        reiniciarFormulario();
+    }
+
+    private void configurarRenderers() {
+        // Renderer para mostrar el nombre del cerrajero en el ComboBox
         comboCerrajero.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -120,9 +96,8 @@ public class VistaPrincipal {
             }
         });
 
-        // Carga el ComboBox de estados directamente desde el Enum EstadoServicio.
+        // Renderer para mostrar la descripción del estado en el ComboBox
         comboEstado.setModel(new DefaultComboBoxModel<>(EstadoServicio.values()));
-        // Le dice al ComboBox que para mostrar cada estado, debe usar su descripción (ej: "En Progreso").
         comboEstado.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -133,74 +108,52 @@ public class VistaPrincipal {
                 return this;
             }
         });
-
-        // Deja el formulario en su estado inicial.
-        reiniciarFormulario();
     }
 
-    /**
-     * --- MÉTODO cargarCerrajeros ---
-     * Pide a la clase `Empresa` que cargue los cerrajeros desde la BD y luego
-     * los añade al JComboBox correspondiente.
-     */
     private void cargarCerrajeros() {
         try {
-            // 1. Delega la carga de datos a la clase del modelo.
             miEmpresa.cargarCerrajerosDesdeBD();
-            
-            // 2. Construye el modelo para el ComboBox.
             DefaultComboBoxModel<Object> model = new DefaultComboBoxModel<>();
-            model.addElement("Seleccionar"); // Añade la opción por defecto.
+            model.addElement("Seleccionar");
             for (Cerrajero c : miEmpresa.getCerrajeros()) {
-                model.addElement(c); // Añade cada objeto Cerrajero.
+                model.addElement(c);
             }
-            model.addElement("Otro"); // Añade la opción "Otro".
-            
-            // 3. Asigna el modelo al componente de la interfaz.
+            model.addElement("Otro");
             comboCerrajero.setModel(model);
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(rootPanel, "Error al cargar cerrajeros: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(rootPanel, "Error al cargar cerrajeros: " + ex.getMessage(), "Error de Base de Datos", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    /**
-     * --- MÉTODO agregarListeners ---
-     * Este método es el corazón de la interacción. Asigna "oyentes" (listeners) a los
-     * componentes de la interfaz. Un listener es un objeto que "escucha" eventos
-     * (como clics) y ejecuta un código en respuesta.
-     */
     private void agregarListeners() {
-        // Listener para el ComboBox de cerrajeros: si se selecciona "Otro", muestra el panel para ingresar uno nuevo.
         comboCerrajero.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
-                panelOtroCerrajero.setVisible("Otro".equals(e.getItem()));
-                //... (código para reajustar el tamaño de la ventana)
+                boolean esOtro = "Otro".equals(e.getItem());
+                panelOtroCerrajero.setVisible(esOtro);
+                SwingUtilities.getWindowAncestor(rootPanel).pack();
             }
         });
 
-        // Asigna a cada botón la acción que debe realizar al ser presionado.
-        // Usa expresiones Lambda (ej: e -> guardarServicio()) para un código más conciso.
         btnGuardarServicio.addActionListener(e -> guardarServicio());
         btnActualizar.addActionListener(e -> actualizarServicio());
         btnEliminar.addActionListener(e -> eliminarServicio());
         btnLimpiarFormulario.addActionListener(e -> reiniciarFormulario());
 
-        // Listener para las pestañas: cuando se selecciona la pestaña de "Consultar", carga los servicios.
         tabbedPane.addChangeListener(e -> {
             if (tabbedPane.getSelectedComponent() == panelConsultar) {
-                cargarServicios(null); // Carga todos los servicios sin filtro.
+                cargarServicios(null);
+                reiniciarFormulario();
             }
         });
 
-        // Listener para la tabla: cuando se selecciona una fila, guarda el ID y carga los datos en el formulario.
         tablaServicios.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && tablaServicios.getSelectedRow() != -1) {
-                idServicioSeleccionado = (Integer) tablaServicios.getValueAt(tablaServicios.getSelectedRow(), 0);
+                int filaSeleccionada = tablaServicios.getSelectedRow();
+                idServicioSeleccionado = (Integer) tablaServicios.getValueAt(filaSeleccionada, 0);
                 cargarDatosServicioEnFormulario(idServicioSeleccionado);
             }
         });
 
-        // Listeners para los botones de búsqueda.
         btnBuscar.addActionListener(e -> cargarServicios(txtBusquedaCliente.getText()));
         btnMostrarTodos.addActionListener(e -> {
             txtBusquedaCliente.setText("");
@@ -208,141 +161,248 @@ public class VistaPrincipal {
         });
     }
 
-    /**
-     * --- MÉTODO reiniciarFormulario ---
-     * Restablece todos los campos del formulario a su estado inicial, limpia selecciones
-     * y ajusta la visibilidad de los botones (ej: muestra "Guardar" y oculta "Actualizar").
-     */
     private void reiniciarFormulario() {
-        // ... (código para limpiar todos los campos y reajustar botones)
+        idServicioSeleccionado = null;
+        clienteSeleccionado = null;
+
+        comboTipoServicio.setSelectedIndex(0);
+        txtNombreCliente.setText("");
+        txtTelefonoCliente.setText("");
+        txtDireccionCliente.setText("");
+        comboMunicipio.setSelectedIndex(0);
+        spinnerFecha.setValue(new Date());
+        spinnerHora.setValue(new Date());
+        spinnerValorServicio.setValue(50000.0);
+        comboMetodoPago.setSelectedIndex(0);
+        comboCerrajero.setSelectedIndex(0);
+        comboEstado.setSelectedItem(EstadoServicio.PENDIENTE);
+
+        panelOtroCerrajero.setVisible(false);
+        txtNombreOtroCerrajero.setText("");
+        txtTelefonoOtroCerrajero.setText("");
+
+        btnGuardarServicio.setVisible(true);
+        btnActualizar.setVisible(false);
+        btnEliminar.setVisible(false);
+        btnLimpiarFormulario.setText("Limpiar Formulario");
+
+        tablaServicios.clearSelection();
+        if (rootPanel.isDisplayable()) { // Evita error si la ventana aún no se ha mostrado
+             SwingUtilities.getWindowAncestor(rootPanel).pack();
+        }
     }
 
-    /**
-     * --- MÉTODO validarCampos ---
-     * Comprueba que los campos obligatorios del formulario no estén vacíos.
-     * @return `true` si la validación es exitosa, `false` en caso contrario.
-     */
     private boolean validarCampos() {
-        // ... (código para verificar cada campo importante)
+        if (comboTipoServicio.getSelectedIndex() == 0) {
+            JOptionPane.showMessageDialog(rootPanel, "Debe seleccionar un tipo de servicio.", "Campo Requerido", JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+        if (txtNombreCliente.getText().trim().isEmpty() || txtTelefonoCliente.getText().trim().isEmpty() || txtDireccionCliente.getText().trim().isEmpty()) {
+             JOptionPane.showMessageDialog(rootPanel, "Nombre, teléfono y dirección del cliente son obligatorios.", "Campos Requeridos", JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+        if (comboMunicipio.getSelectedIndex() == 0) {
+            JOptionPane.showMessageDialog(rootPanel, "Debe seleccionar un municipio.", "Campo Requerido", JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+        if (comboCerrajero.getSelectedIndex() == 0) {
+            JOptionPane.showMessageDialog(rootPanel, "Debe seleccionar un cerrajero.", "Campo Requerido", JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+        if ("Otro".equals(comboCerrajero.getSelectedItem()) && (txtNombreOtroCerrajero.getText().trim().isEmpty() || txtTelefonoOtroCerrajero.getText().trim().isEmpty())) {
+             JOptionPane.showMessageDialog(rootPanel, "El nombre y teléfono del nuevo cerrajero son obligatorios.", "Campos Requeridos", JOptionPane.WARNING_MESSAGE);
+             return false;
+        }
         return true;
     }
 
-    /**
-     * --- MÉTODO guardarServicio ---
-     * 1. Valida los campos.
-     * 2. Recopila todos los datos del formulario.
-     * 3. Crea los objetos del modelo (`Cliente`, `Cerrajero`, `Servicio`).
-     * 4. Delega la operación de guardado al objeto `Servicio`.
-     * 5. Muestra un mensaje al usuario y reinicia el formulario.
-     */
     private void guardarServicio() {
         if (!validarCampos()) return;
-        try {
-            // Recopila datos y crea los objetos del modelo.
-            Cliente cliente = new Cliente(txtNombreCliente.getText(), ...);
-            Cerrajero cerrajero = ...;
-            Servicio servicio = new Servicio(..., cliente, cerrajero);
-            
-            // *** DELEGACIÓN ***
-            // La vista no sabe cómo guardar. Solo le dice al servicio: "guárdate".
-            servicio.guardar();
-            
-            JOptionPane.showMessageDialog(rootPanel, "Servicio guardado.", "Éxito", ...);
-            // ... (limpieza post-guardado)
-        } catch (SQLException ex) {
-            // Si el modelo lanza un error, la vista lo captura y se lo muestra al usuario.
-            JOptionPane.showMessageDialog(rootPanel, "Error al guardar: " + ex.getMessage(), ...);
-        }
-    }
 
-    /**
-     * --- MÉTODO actualizarServicio ---
-     * Similar a guardar, pero para actualizar un servicio existente.
-     * 1. Recopila los datos.
-     * 2. Carga el servicio original de la BD (usando `Servicio.cargarPorId`).
-     * 3. Modifica sus atributos con los nuevos datos del formulario.
-     * 4. Delega la operación de actualización al objeto `Servicio`.
-     */
-    private void actualizarServicio() {
-        // ... (validaciones y confirmación)
         try {
-             // *** DELEGACIÓN ***
-            // La vista crea un objeto de servicio con los datos actualizados y le pide que se actualice.
-            Servicio servicioActualizado = new Servicio(idServicioSeleccionado, ...);
-            servicioActualizado.actualizar();
-            
-            JOptionPane.showMessageDialog(rootPanel, "Servicio actualizado.", ...);
-            // ... (limpieza post-actualización)
+            // Se crea un NUEVO cliente con los datos del formulario
+            Cliente cliente = new Cliente(
+                txtNombreCliente.getText().trim(), 
+                txtTelefonoCliente.getText().trim(), 
+                txtDireccionCliente.getText().trim(), 
+                (String) comboMunicipio.getSelectedItem()
+            );
+
+            Cerrajero cerrajero;
+            if (comboCerrajero.getSelectedItem() instanceof Cerrajero) {
+                cerrajero = (Cerrajero) comboCerrajero.getSelectedItem();
+            } else { // Es "Otro", se crea un NUEVO cerrajero
+                cerrajero = new Cerrajero(txtNombreOtroCerrajero.getText().trim(), txtTelefonoOtroCerrajero.getText().trim());
+            }
+
+            Servicio servicio = new Servicio(
+                    (String) comboTipoServicio.getSelectedItem(),
+                    txtDireccionCliente.getText().trim(),
+                    (String) comboMunicipio.getSelectedItem(),
+                    new java.sql.Date(((Date) spinnerFecha.getValue()).getTime()),
+                    new Time(((Date) spinnerHora.getValue()).getTime()),
+                    BigDecimal.valueOf((Double) spinnerValorServicio.getValue()),
+                    (String) comboMetodoPago.getSelectedItem(),
+                    (EstadoServicio) comboEstado.getSelectedItem(),
+                    cliente,
+                    cerrajero
+            );
+
+            servicio.guardar(); // El método guardar se encarga de la transacción
+
+            JOptionPane.showMessageDialog(rootPanel, "Servicio guardado con éxito.", "Operación Exitosa", JOptionPane.INFORMATION_MESSAGE);
+            reiniciarFormulario();
+            cargarServicios(null);
+            tabbedPane.setSelectedIndex(1);
+
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(rootPanel, "Error al actualizar: " + ex.getMessage(), ...);
+            JOptionPane.showMessageDialog(rootPanel, "Error al guardar: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    /**
-     * --- MÉTODO eliminarServicio ---
-     * Pide confirmación y luego delega la eliminación a un método estático de la clase `Servicio`.
-     */
-    private void eliminarServicio() {
-        // ... (confirmación)
+    private void actualizarServicio() {
+        if (idServicioSeleccionado == null || clienteSeleccionado == null) return;
+        if (!validarCampos()) return;
+        
+        int confirmacion = JOptionPane.showConfirmDialog(rootPanel, "¿Está seguro de que desea actualizar este servicio?", "Confirmar Actualización", JOptionPane.YES_NO_OPTION);
+        if (confirmacion != JOptionPane.YES_OPTION) return;
+
         try {
-            // *** DELEGACIÓN ***
-            // La vista no sabe cómo eliminar. Llama al método estático del modelo.
-            Servicio.eliminar(idServicioSeleccionado);
-            JOptionPane.showMessageDialog(rootPanel, "Servicio eliminado.", ...);
-            // ... (limpieza)
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(rootPanel, "Error al eliminar: " + ex.getMessage(), ...);
+            // Se actualizan los datos del objeto Cliente que ya teníamos
+            clienteSeleccionado.setNombre(txtNombreCliente.getText().trim());
+            clienteSeleccionado.setTelefono(txtTelefonoCliente.getText().trim());
+            clienteSeleccionado.setDireccion(txtDireccionCliente.getText().trim());
+            clienteSeleccionado.setCiudad((String) comboMunicipio.getSelectedItem());
+            
+            Cerrajero cerrajero;
+            if (comboCerrajero.getSelectedItem() instanceof Cerrajero) {
+                cerrajero = (Cerrajero) comboCerrajero.getSelectedItem();
+            } else { // Es "Otro"
+                cerrajero = new Cerrajero(txtNombreOtroCerrajero.getText().trim(), txtTelefonoOtroCerrajero.getText().trim());
+            }
+
+            Servicio servicioActualizado = new Servicio(
+                    idServicioSeleccionado,
+                    (String) comboTipoServicio.getSelectedItem(),
+                    txtDireccionCliente.getText().trim(),
+                    (String) comboMunicipio.getSelectedItem(),
+                    new java.sql.Date(((Date) spinnerFecha.getValue()).getTime()),
+                    new Time(((Date) spinnerHora.getValue()).getTime()),
+                    BigDecimal.valueOf((Double) spinnerValorServicio.getValue()),
+                    (String) comboMetodoPago.getSelectedItem(),
+                    (EstadoServicio) comboEstado.getSelectedItem(),
+                    clienteSeleccionado, // Se pasa el objeto Cliente existente y actualizado
+                    cerrajero
+            );
+
+            servicioActualizado.actualizar(); // El método se encarga de la transacción
+
+            JOptionPane.showMessageDialog(rootPanel, "Servicio actualizado con éxito.", "Operación Exitosa", JOptionPane.INFORMATION_MESSAGE);
+            reiniciarFormulario();
+            cargarServicios(null);
+            tabbedPane.setSelectedIndex(1);
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(rootPanel, "Error al actualizar: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    /**
-     * --- MÉTODO cargarServicios ---
-     * Delega la obtención de la lista de servicios a la clase `Servicio` y luego
-     * usa esos datos para construir y mostrar las filas en la `JTable`.
-     */
+    private void eliminarServicio() {
+        if (idServicioSeleccionado == null) return;
+
+        int confirmacion = JOptionPane.showConfirmDialog(rootPanel, "¿Está seguro de que desea eliminar este servicio permanentemente?", "Confirmar Eliminación", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (confirmacion != JOptionPane.YES_OPTION) return;
+
+        try {
+            Servicio.eliminar(idServicioSeleccionado);
+            JOptionPane.showMessageDialog(rootPanel, "Servicio eliminado con éxito.", "Operación Exitosa", JOptionPane.INFORMATION_MESSAGE);
+            reiniciarFormulario();
+            cargarServicios(null);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(rootPanel, "Error al eliminar: " + ex.getMessage(), "Error de Base de Datos", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     private void cargarServicios(String filtroCliente) {
         try {
-            DefaultTableModel modelo = (DefaultTableModel) tablaServicios.getModel();
-            modelo.setRowCount(0); // Limpia la tabla antes de cargar nuevos datos.
+            DefaultTableModel modelo = new DefaultTableModel() {
+                @Override public boolean isCellEditable(int row, int column) { return false; }
+            };
+            modelo.setColumnIdentifiers(new Object[]{"ID", "Cliente", "Teléfono", "Tipo", "Estado", "Fecha"});
             
-            // *** DELEGACIÓN ***
-            // Pide al modelo la lista de servicios.
             for (Vector<Object> fila : Servicio.listarServicios(filtroCliente)) {
-                modelo.addRow(fila); // Añade cada fila al modelo de la tabla.
+                modelo.addRow(fila);
             }
+            
+            tablaServicios.setModel(modelo);
+            ajustarAnchoColumnas();
+
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(rootPanel, "Error al cargar servicios: " + ex.getMessage(), ...);
+            JOptionPane.showMessageDialog(rootPanel, "Error al cargar servicios: " + ex.getMessage(), "Error de Base de Datos", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    /**
-     * --- MÉTODO cargarDatosServicioEnFormulario ---
-     * Cuando se selecciona un servicio en la tabla, este método:
-     * 1. Pide a la clase `Servicio` que cargue todos los datos de ese servicio por su ID.
-     * 2. Rellena todos los campos del formulario con los datos del objeto `Servicio` recibido.
-     */
     private void cargarDatosServicioEnFormulario(int idServicio) {
         try {
-            // *** DELEGACIÓN ***
-            // Pide al modelo que le de el objeto Servicio completo.
             Servicio servicio = Servicio.cargarPorId(idServicio);
             if (servicio == null) return;
 
-            // Una vez que tiene el objeto, la vista se encarga de rellenar sus propios componentes.
-            txtNombreCliente.setText(servicio.getCliente().getNombre());
-            // ... (rellenar todos los demás campos)
-            
-            // Lógica para ajustar los botones y cambiar a la pestaña de registro.
-            // ...
+            // Guardamos el cliente completo para poder actualizarlo después
+            this.clienteSeleccionado = servicio.getCliente();
+
+            // Rellenar campos del formulario
+            comboTipoServicio.setSelectedItem(servicio.getTipo());
+            txtNombreCliente.setText(clienteSeleccionado.getNombre());
+            txtTelefonoCliente.setText(clienteSeleccionado.getTelefono());
+            txtDireccionCliente.setText(clienteSeleccionado.getDireccion());
+            comboMunicipio.setSelectedItem(clienteSeleccionado.getCiudad());
+            spinnerFecha.setValue(servicio.getFecha());
+            spinnerHora.setValue(servicio.getHora());
+            spinnerValorServicio.setValue(servicio.getValor().doubleValue());
+            comboMetodoPago.setSelectedItem(servicio.getMetodoPago());
+            comboEstado.setSelectedItem(servicio.getEstado());
+
+            // Lógica para seleccionar el cerrajero correcto
+            boolean cerrajeroEncontrado = false;
+            for (int i = 0; i < comboCerrajero.getItemCount(); i++) {
+                if (comboCerrajero.getItemAt(i) instanceof Cerrajero) {
+                    Cerrajero c = (Cerrajero) comboCerrajero.getItemAt(i);
+                    if (Objects.equals(c.getId(), servicio.getCerrajero().getId())) {
+                        comboCerrajero.setSelectedIndex(i);
+                        cerrajeroEncontrado = true;
+                        break;
+                    }
+                }
+            }
+            if (!cerrajeroEncontrado) { // Si el cerrajero no está en la lista
+                comboCerrajero.setSelectedItem("Otro");
+                txtNombreOtroCerrajero.setText(servicio.getCerrajero().getNombre());
+                txtTelefonoOtroCerrajero.setText(servicio.getCerrajero().getTelefono());
+                panelOtroCerrajero.setVisible(true);
+            }
+
+            // Ajustar botones y cambiar de pestaña
+            btnGuardarServicio.setVisible(false);
+            btnActualizar.setVisible(true);
+            btnEliminar.setVisible(true);
+            btnLimpiarFormulario.setText("Cancelar Edición");
+            tabbedPane.setSelectedIndex(0);
+
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(rootPanel, "Error al cargar datos: " + ex.getMessage(), ...);
+            JOptionPane.showMessageDialog(rootPanel, "Error al cargar datos del servicio: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    // ... (otros métodos auxiliares como ajustarAnchoColumnas)
+    private void ajustarAnchoColumnas() {
+        TableColumnModel modeloColumna = tablaServicios.getColumnModel();
+        modeloColumna.getColumn(0).setMaxWidth(60); // ID
+        modeloColumna.getColumn(1).setPreferredWidth(200); // Cliente
+        modeloColumna.getColumn(2).setPreferredWidth(120); // Teléfono
+        modeloColumna.getColumn(3).setPreferredWidth(180); // Tipo
+        modeloColumna.getColumn(4).setPreferredWidth(120); // Estado
+        modeloColumna.getColumn(5).setPreferredWidth(100); // Fecha
+    }
 
-    // --- MÉTODO getMainPanel ---
-    // Permite que la clase `Main` obtenga el panel principal para mostrarlo en la ventana.
     public JPanel getMainPanel() {
         return rootPanel;
     }
