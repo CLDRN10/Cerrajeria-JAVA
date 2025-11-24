@@ -67,9 +67,16 @@ public class VistaPrincipal {
         spinnerHora.setEditor(new JSpinner.DateEditor(spinnerHora, "hh:mm a"));
         spinnerValorServicio.setModel(new SpinnerNumberModel(50000.0, 0.0, 10000000.0, 1000.0));
 
-        comboTipoServicio.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "Apertura de puerta", "Instalación de cerradura", "Cambio de guardas", "Mantenimiento"}));
-        comboMunicipio.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "Bucaramanga", "Floridablanca", "Girón", "Piedecuesta"}));
-        comboMetodoPago.setModel(new DefaultComboBoxModel<>(new String[]{"Efectivo", "Nequi", "Bancolombia", "Daviplata"}));
+        // --- ACTUALIZACIÓN DE LISTAS DESPLEGABLES ---
+        comboTipoServicio.setModel(new DefaultComboBoxModel<>(new String[]{
+            "Seleccionar", "Apertura de automóvil", "Apertura de caja fuerte", 
+            "Apertura de candado", "Apertura de motocicleta", "Apertura de puerta residencial", 
+            "Cambio de clave de automóvil", "Cambio de clave de motocicleta", "Cambio de clave residencial",
+            "Duplicado de llave", "Elaboración de llaves", "Instalación de alarma", "Instalación de chapa",
+            "Reparación general"
+        }));
+        comboMunicipio.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "Bucaramanga", "Floridablanca", "Piedecuesta"}));
+        comboMetodoPago.setModel(new DefaultComboBoxModel<>(new String[]{"Efectivo", "Nequi"}));
 
         cargarCerrajeros();
         configurarRenderers();
