@@ -277,7 +277,7 @@
                     </constraints>
                     <properties>
                       <font size="16" style="1"/>
-                      <text value="Limpiar"/>
+                      <text value="Cancelar"/>
                     </properties>
                   </component>
                 </children>

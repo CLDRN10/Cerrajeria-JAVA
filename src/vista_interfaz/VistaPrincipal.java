@@ -22,7 +22,7 @@ public class VistaPrincipal {
 
     // --- ATRIBUTOS DE ESTADO ---
     private Integer idServicioSeleccionado = null;
-    private Cliente clienteSeleccionado = null; 
+    private Cliente clienteSeleccionado = null;
     private final Empresa miEmpresa;
 
     // --- COMPONENTES SWING ---
@@ -57,35 +57,53 @@ public class VistaPrincipal {
         this.miEmpresa = new Empresa("Cerrajería 24 horas");
         inicializarComponentesVisuales();
         agregarListeners();
-        cargarServicios(null); 
+        cargarServicios(null); // Carga inicial de todos los servicios
     }
 
     private void inicializarComponentesVisuales() {
+        // --- Configuración de Spinners ---
         spinnerFecha.setModel(new SpinnerDateModel());
         spinnerFecha.setEditor(new JSpinner.DateEditor(spinnerFecha, "dd/MM/yyyy"));
         spinnerHora.setModel(new SpinnerDateModel());
         spinnerHora.setEditor(new JSpinner.DateEditor(spinnerHora, "hh:mm a"));
         spinnerValorServicio.setModel(new SpinnerNumberModel(50000.0, 0.0, 10000000.0, 1000.0));
 
-        // --- ACTUALIZACIÓN DE LISTAS DESPLEGABLES ---
+        // --- Configuración de ComboBoxes con tus opciones ---
         comboTipoServicio.setModel(new DefaultComboBoxModel<>(new String[]{
-            "Seleccionar", "Apertura de automóvil", "Apertura de caja fuerte", 
-            "Apertura de candado", "Apertura de motocicleta", "Apertura de puerta residencial", 
-            "Cambio de clave de automóvil", "Cambio de clave de motocicleta", "Cambio de clave residencial",
-            "Duplicado de llave", "Elaboración de llaves", "Instalación de alarma", "Instalación de chapa",
-            "Reparación general"
+                "Seleccionar", "Apertura de automóvil", "Apertura de caja fuerte",
+                "Apertura de candado", "Apertura de motocicleta", "Apertura de puerta residencial",
+                "Cambio de clave de automóvil", "Cambio de clave de motocicleta", "Cambio de clave residencial",
+                "Duplicado de llave", "Elaboración de llaves", "Instalación de alarma", "Instalación de chapa",
+                "Reparación general"
         }));
         comboMunicipio.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "Bucaramanga", "Floridablanca", "Piedecuesta"}));
         comboMetodoPago.setModel(new DefaultComboBoxModel<>(new String[]{"Efectivo", "Nequi"}));
 
+        // --- Carga de datos y configuración de apariencia ---
         cargarCerrajeros();
         configurarRenderers();
 
-        tablaServicios.setDefaultEditor(Object.class, null); 
-        reiniciarFormulario();
+        // --- CONFIGURACIÓN DE LA TABLA ---
+        tablaServicios.setDefaultEditor(Object.class, null);
+        tablaServicios.setAutoCreateRowSorter(true);
+        tablaServicios.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // Clave para el scroll horizontal
+
+        reiniciarFormulario(); // Pone el formulario en su estado inicial
+    }
+
+    private void ajustarAnchoColumnas() {
+        TableColumnModel modeloColumna = tablaServicios.getColumnModel();
+        modeloColumna.getColumn(0).setPreferredWidth(40);  // ID
+        modeloColumna.getColumn(1).setPreferredWidth(90);  // Fecha
+        modeloColumna.getColumn(2).setPreferredWidth(200); // Tipo
+        modeloColumna.getColumn(3).setPreferredWidth(200); // Cliente
+        modeloColumna.getColumn(4).setPreferredWidth(200); // Cerrajero
+        modeloColumna.getColumn(5).setPreferredWidth(100); // Estado
+        modeloColumna.getColumn(6).setPreferredWidth(100); // Monto
     }
 
     private void configurarRenderers() {
+        // Para que el combo de cerrajeros muestre el nombre del objeto Cerrajero
         comboCerrajero.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -99,6 +117,7 @@ public class VistaPrincipal {
             }
         });
 
+        // Para que el combo de estados muestre la descripción legible del Enum
         comboEstado.setModel(new DefaultComboBoxModel<>(EstadoServicio.values()));
         comboEstado.setRenderer(new DefaultListCellRenderer() {
             @Override
@@ -128,13 +147,23 @@ public class VistaPrincipal {
     }
 
     private void agregarListeners() {
+        // --- CAMBIO: Habilita/Deshabilita campos de "Otro Cerrajero" ---
         comboCerrajero.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
-                boolean esOtro = "Otro".equals(e.getItem());
-                panelOtroCerrajero.setVisible(esOtro);
-                SwingUtilities.getWindowAncestor(rootPanel).pack();
+                boolean habilitarCamposOtro = "Otro".equals(e.getItem());
+                txtNombreOtroCerrajero.setEnabled(habilitarCamposOtro);
+                txtTelefonoOtroCerrajero.setEnabled(habilitarCamposOtro);
+
+                // Si se habilitan, pone el foco en el primer campo
+                if (habilitarCamposOtro) {
+                    txtNombreOtroCerrajero.requestFocusInWindow();
+                } else { // Si no, los limpia
+                    txtNombreOtroCerrajero.setText("");
+                    txtTelefonoOtroCerrajero.setText("");
+                }
             }
         });
+        // --- FIN CAMBIO ---
 
         btnGuardarServicio.addActionListener(e -> guardarServicio());
         btnActualizar.addActionListener(e -> actualizarServicio());
@@ -150,8 +179,9 @@ public class VistaPrincipal {
 
         tablaServicios.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && tablaServicios.getSelectedRow() != -1) {
-                int filaSeleccionada = tablaServicios.getSelectedRow();
-                idServicioSeleccionado = (Integer) tablaServicios.getValueAt(filaSeleccionada, 0);
+                int vistaFilaSeleccionada = tablaServicios.getSelectedRow();
+                int modeloFilaSeleccionada = tablaServicios.convertRowIndexToModel(vistaFilaSeleccionada);
+                idServicioSeleccionado = (Integer) tablaServicios.getModel().getValueAt(modeloFilaSeleccionada, 0);
                 cargarDatosServicioEnFormulario(idServicioSeleccionado);
             }
         });
@@ -179,54 +209,45 @@ public class VistaPrincipal {
         comboCerrajero.setSelectedIndex(0);
         comboEstado.setSelectedItem(EstadoServicio.PENDIENTE);
 
-        panelOtroCerrajero.setVisible(false);
+        // --- CAMBIO: Campos de "Otro" cerrajero visibles pero deshabilitados ---
         txtNombreOtroCerrajero.setText("");
         txtTelefonoOtroCerrajero.setText("");
+        txtNombreOtroCerrajero.setEnabled(false);
+        txtTelefonoOtroCerrajero.setEnabled(false);
+        // --- FIN CAMBIO ---
 
         btnGuardarServicio.setVisible(true);
         btnActualizar.setVisible(false);
         btnEliminar.setVisible(false);
-        btnLimpiarFormulario.setText("Limpiar Formulario");
+        btnLimpiarFormulario.setText("Limpiar");
 
         tablaServicios.clearSelection();
-        if (rootPanel.isDisplayable()) {
-             SwingUtilities.getWindowAncestor(rootPanel).pack();
-        }
     }
 
     private boolean validarCampos() {
-        if (comboTipoServicio.getSelectedIndex() == 0) {
-            JOptionPane.showMessageDialog(rootPanel, "Debe seleccionar un tipo de servicio.", "Campo Requerido", JOptionPane.WARNING_MESSAGE);
+        if (comboTipoServicio.getSelectedIndex() == 0 || comboMunicipio.getSelectedIndex() == 0 || comboCerrajero.getSelectedIndex() == 0) {
+            JOptionPane.showMessageDialog(rootPanel, "Debe seleccionar una opción en todos los campos desplegables.", "Campos Requeridos", JOptionPane.WARNING_MESSAGE);
             return false;
         }
         if (txtNombreCliente.getText().trim().isEmpty() || txtTelefonoCliente.getText().trim().isEmpty() || txtDireccionCliente.getText().trim().isEmpty()) {
-             JOptionPane.showMessageDialog(rootPanel, "Nombre, teléfono y dirección del cliente son obligatorios.", "Campos Requeridos", JOptionPane.WARNING_MESSAGE);
-            return false;
-        }
-        if (comboMunicipio.getSelectedIndex() == 0) {
-            JOptionPane.showMessageDialog(rootPanel, "Debe seleccionar un municipio.", "Campo Requerido", JOptionPane.WARNING_MESSAGE);
-            return false;
-        }
-        if (comboCerrajero.getSelectedIndex() == 0) {
-            JOptionPane.showMessageDialog(rootPanel, "Debe seleccionar un cerrajero.", "Campo Requerido", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(rootPanel, "Nombre, teléfono y dirección del cliente son obligatorios.", "Campos Requeridos", JOptionPane.WARNING_MESSAGE);
             return false;
         }
         if ("Otro".equals(comboCerrajero.getSelectedItem()) && (txtNombreOtroCerrajero.getText().trim().isEmpty() || txtTelefonoOtroCerrajero.getText().trim().isEmpty())) {
-             JOptionPane.showMessageDialog(rootPanel, "El nombre y teléfono del nuevo cerrajero son obligatorios.", "Campos Requeridos", JOptionPane.WARNING_MESSAGE);
-             return false;
+            JOptionPane.showMessageDialog(rootPanel, "El nombre y teléfono del nuevo cerrajero son obligatorios.", "Campos Requeridos", JOptionPane.WARNING_MESSAGE);
+            return false;
         }
         return true;
     }
 
     private void guardarServicio() {
         if (!validarCampos()) return;
-
         try {
             Cliente cliente = new Cliente(
-                txtNombreCliente.getText().trim(),
-                txtTelefonoCliente.getText().trim(),
-                txtDireccionCliente.getText().trim(),
-                (String) comboMunicipio.getSelectedItem()
+                    txtNombreCliente.getText().trim(),
+                    txtTelefonoCliente.getText().trim(),
+                    txtDireccionCliente.getText().trim(),
+                    (String) comboMunicipio.getSelectedItem()
             );
 
             Cerrajero cerrajero;
@@ -246,7 +267,6 @@ public class VistaPrincipal {
                     cliente,
                     cerrajero
             );
-
             servicio.guardar();
 
             JOptionPane.showMessageDialog(rootPanel, "Servicio guardado con éxito.", "Operación Exitosa", JOptionPane.INFORMATION_MESSAGE);
@@ -255,15 +275,13 @@ public class VistaPrincipal {
             tabbedPane.setSelectedIndex(1);
 
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(rootPanel, "Error al guardar: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(rootPanel, "Error al guardar el servicio: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             ex.printStackTrace();
         }
     }
 
     private void actualizarServicio() {
-        if (idServicioSeleccionado == null || clienteSeleccionado == null) return;
-        if (!validarCampos()) return;
-
+        if (idServicioSeleccionado == null || clienteSeleccionado == null || !validarCampos()) return;
         int confirmacion = JOptionPane.showConfirmDialog(rootPanel, "¿Está seguro de que desea actualizar este servicio?", "Confirmar Actualización", JOptionPane.YES_NO_OPTION);
         if (confirmacion != JOptionPane.YES_OPTION) return;
 
@@ -276,7 +294,7 @@ public class VistaPrincipal {
             Cerrajero cerrajero;
             if (comboCerrajero.getSelectedItem() instanceof Cerrajero) {
                 cerrajero = (Cerrajero) comboCerrajero.getSelectedItem();
-            } else { 
+            } else {
                 cerrajero = new Cerrajero(txtNombreOtroCerrajero.getText().trim(), txtTelefonoOtroCerrajero.getText().trim());
             }
 
@@ -291,7 +309,6 @@ public class VistaPrincipal {
                     clienteSeleccionado,
                     cerrajero
             );
-
             servicioActualizado.actualizar();
 
             JOptionPane.showMessageDialog(rootPanel, "Servicio actualizado con éxito.", "Operación Exitosa", JOptionPane.INFORMATION_MESSAGE);
@@ -300,14 +317,13 @@ public class VistaPrincipal {
             tabbedPane.setSelectedIndex(1);
 
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(rootPanel, "Error al actualizar: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(rootPanel, "Error al actualizar el servicio: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             ex.printStackTrace();
         }
     }
 
     private void eliminarServicio() {
         if (idServicioSeleccionado == null) return;
-
         int confirmacion = JOptionPane.showConfirmDialog(rootPanel, "¿Está seguro de que desea eliminar este servicio permanentemente?", "Confirmar Eliminación", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         if (confirmacion != JOptionPane.YES_OPTION) return;
 
@@ -317,34 +333,38 @@ public class VistaPrincipal {
             reiniciarFormulario();
             cargarServicios(null);
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(rootPanel, "Error al eliminar: " + ex.getMessage(), "Error de Base de Datos", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(rootPanel, "Error al eliminar el servicio: " + ex.getMessage(), "Error de Base de Datos", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void cargarServicios(String filtroCliente) {
         try {
-            DefaultTableModel modelo = new DefaultTableModel() {
-                @Override public boolean isCellEditable(int row, int column) { return false; }
+            String[] columnas = {"ID", "Fecha", "Tipo", "Cliente", "Cerrajero", "Estado", "Monto"};
+            DefaultTableModel modelo = new DefaultTableModel(columnas, 0) {
+                @Override
+                public boolean isCellEditable(int row, int column) {
+                    return false;
+                }
             };
-            modelo.setColumnIdentifiers(new Object[]{"ID", "Fecha", "Tipo", "Cliente", "Cerrajero", "Estado", "Monto"});
-            
             for (Vector<Object> fila : Servicio.listarServicios(filtroCliente)) {
                 modelo.addRow(fila);
             }
-            
+
             tablaServicios.setModel(modelo);
-            ajustarAnchoColumnas();
+            ajustarAnchoColumnas(); // Se ajustan las columnas después de que la tabla tiene datos
 
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(rootPanel, "Error al cargar servicios: " + ex.getMessage(), "Error de Base de Datos", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(rootPanel, "Error al cargar los servicios: " + ex.getMessage(), "Error de Base de Datos", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void cargarDatosServicioEnFormulario(int idServicio) {
         try {
             Servicio servicio = Servicio.cargarPorId(idServicio);
-            if (servicio == null) return;
-
+            if (servicio == null) {
+                JOptionPane.showMessageDialog(rootPanel, "No se encontró el servicio seleccionado.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             this.clienteSeleccionado = servicio.getCliente();
 
             comboTipoServicio.setSelectedItem(servicio.getTipo());
@@ -358,6 +378,7 @@ public class VistaPrincipal {
             comboMetodoPago.setSelectedItem(servicio.getMetodoPago());
             comboEstado.setSelectedItem(servicio.getEstado());
 
+            // --- CAMBIO: Lógica para manejar la selección de "Otro Cerrajero" ---
             boolean cerrajeroEncontrado = false;
             for (int i = 0; i < comboCerrajero.getItemCount(); i++) {
                 if (comboCerrajero.getItemAt(i) instanceof Cerrajero) {
@@ -369,33 +390,33 @@ public class VistaPrincipal {
                     }
                 }
             }
-            if (!cerrajeroEncontrado) {
+
+            if (cerrajeroEncontrado) {
+                // Si el cerrajero estaba en la lista, los campos "Otro" se deshabilitan y limpian
+                txtNombreOtroCerrajero.setText("");
+                txtTelefonoOtroCerrajero.setText("");
+                txtNombreOtroCerrajero.setEnabled(false);
+                txtTelefonoOtroCerrajero.setEnabled(false);
+            } else {
+                // Si no estaba en la lista, era un "Otro". Se seleccionan y habilitan los campos.
                 comboCerrajero.setSelectedItem("Otro");
                 txtNombreOtroCerrajero.setText(servicio.getCerrajero().getNombre());
                 txtTelefonoOtroCerrajero.setText(servicio.getCerrajero().getTelefono());
-                panelOtroCerrajero.setVisible(true);
+                txtNombreOtroCerrajero.setEnabled(true);
+                txtTelefonoOtroCerrajero.setEnabled(true);
             }
+            // --- FIN CAMBIO ---
 
             btnGuardarServicio.setVisible(false);
             btnActualizar.setVisible(true);
             btnEliminar.setVisible(true);
-            btnLimpiarFormulario.setText("Cancelar Edición");
+            btnLimpiarFormulario.setText("Cancelar");
             tabbedPane.setSelectedIndex(0);
 
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(rootPanel, "Error al cargar datos del servicio: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(rootPanel, "Error al cargar los datos del servicio: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
         }
-    }
-
-    private void ajustarAnchoColumnas() {
-        TableColumnModel modeloColumna = tablaServicios.getColumnModel();
-        modeloColumna.getColumn(0).setMaxWidth(50);
-        modeloColumna.getColumn(1).setPreferredWidth(90);
-        modeloColumna.getColumn(2).setPreferredWidth(150);
-        modeloColumna.getColumn(3).setPreferredWidth(150);
-        modeloColumna.getColumn(4).setPreferredWidth(150);
-        modeloColumna.getColumn(5).setPreferredWidth(110);
-        modeloColumna.getColumn(6).setPreferredWidth(100);
     }
 
     public JPanel getMainPanel() {

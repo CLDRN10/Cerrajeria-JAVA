@@ -1,3 +1,4 @@
+
 package controlador_persistencia;
 
 import java.sql.Connection;
@@ -6,67 +7,58 @@ import java.sql.SQLException;
 
 /**
  * ==================================================================
- * PAQUETE controlador_persistencia
- * ==================================================================
- * Este paquete contiene las clases cuya única responsabilidad es
- * interactuar con la capa de "persistencia", es decir, la base de datos.
- * Separa la lógica de conexión de la lógica de negocio.
- * 
- * ==================================================================
  * CLASE ConexionBD
  * ==================================================================
- * Gestiona de forma centralizada la creación y el cierre de conexiones
- * a la base de datos PostgreSQL.
- * 
- * PROPÓSITO:
- * Abstraer los detalles de la conexión (URL, usuario, contraseña) en un solo lugar.
- * Si en el futuro la base de datos cambiara o se moviera a otro servidor,
- * solo habría que modificar esta clase.
+ * Gestiona la conexión con la base de datos PostgreSQL.
+ * Centraliza los detalles de la conexión (URL, usuario, contraseña)
+ * para que sean fáciles de modificar en un solo lugar.
  */
 public class ConexionBD {
 
-    // --- CONSTANTES DE CONEXIÓN ---
-    // Se definen como constantes (`private static final`) porque son valores
-    // fijos que no deben cambiar durante la ejecución del programa.
-    private static final String URL = "jdbc:postgresql://localhost:5432/cerrajeria_bd";
-    private static final String USUARIO = "postgres";
-    private static final String CONTRASENA = "123456";
+    // --- CREDENCIALES DE LA BASE DE DATOS EN CLEVER CLOUD ---
+    // Extraídas de la URL proporcionada en el error.
+    private static final String HOST = "bbuyudlfwnpkhqhq4gls-postgresql.services.clever-cloud.com";
+    private static final String PORT = "50013";
+    private static final String DATABASE = "bbuyudlfwnpkhqhq4gls";
+    private static final String USUARIO = "uuxf0dkhinr6jhmhb8vq";
+    private static final String CONTRASENA = "n7qBZj8KPCrUrIam6MSfkwoNVqFzNd";
+
+    // --- URL DE CONEXIÓN JDBC ---
+    // El formato correcto es "jdbc:postgresql://HOST:PORT/DATABASE"
+    private static final String URL = "jdbc:postgresql://" + HOST + ":" + PORT + "/" + DATABASE;
 
     /**
      * --- MÉTODO getConnection ---
-     * Establece y devuelve una nueva conexión con la base de datos.
-     * Cada vez que una clase del modelo (como `Servicio`) necesita realizar una
-     * operación en la BD, llama a este método para obtener un "canal" de comunicación.
-     *
-     * @return Un objeto `Connection` que representa la sesión con la base de datos.
-     * @throws SQLException Si no se puede establecer la conexión (ej: BD no disponible,
-     *                      credenciales incorrectas, etc.).
+     * Intenta establecer y devolver una conexión con la base de datos.
+     * Carga el driver de PostgreSQL antes de intentar la conexión.
+     * @return Un objeto Connection si la conexión es exitosa.
+     * @throws SQLException Si ocurre un error al conectar (ej: credenciales incorrectas, BD no disponible).
      */
     public Connection getConnection() throws SQLException {
-        // DriverManager es una clase de Java (del driver JDBC) que gestiona los drivers de BD.
-        // El método `getConnection` intenta establecer la conexión usando la URL, usuario y contraseña.
+        try {
+            // Esto asegura que el driver de PostgreSQL esté cargado en memoria.
+            Class.forName("org.postgresql.Driver");
+        } catch (ClassNotFoundException e) {
+            // Este error ocurriría si el archivo .jar del driver no estuviera en el proyecto.
+            throw new SQLException("Error: No se encontró el driver de PostgreSQL.", e);
+        }
+        // Intenta la conexión usando las credenciales y la URL formateada.
         return DriverManager.getConnection(URL, USUARIO, CONTRASENA);
     }
 
     /**
      * --- MÉTODO closeConnection ---
-     * Cierra de forma segura una conexión a la base de datos.
-     * Es CRUCIAL cerrar siempre las conexiones después de usarlas para liberar
-     * recursos tanto en la aplicación como en el servidor de la base de datos.
-     *
-     * @param conn El objeto `Connection` que se desea cerrar.
+     * Cierra la conexión de forma segura, verificando que no sea nula.
+     * @param conn La conexión a cerrar.
      */
     public void closeConnection(Connection conn) {
-        // Se verifica que la conexión no sea nula y que no esté ya cerrada.
         if (conn != null) {
             try {
-                // El método `close()` libera los recursos de la conexión.
                 conn.close();
             } catch (SQLException ex) {
-                // Si ocurre un error al cerrar, se imprime en la consola para diagnóstico.
-                // No se relanza la excepción porque cerrar la conexión es una operación
-                // de limpieza, y un fallo aquí no debería detener el flujo principal.
-                System.err.println("Error al cerrar la conexión a la BD: " + ex.getMessage());
+                // Imprime el error en la consola si falla el cierre.
+                // En una app real, esto podría ir a un sistema de logs.
+                ex.printStackTrace(System.err);
             }
         }
     }

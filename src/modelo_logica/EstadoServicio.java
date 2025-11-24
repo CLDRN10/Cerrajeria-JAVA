@@ -21,7 +21,7 @@ public enum EstadoServicio {
     // Cada uno de estos es, en efecto, un objeto único de tipo EstadoServicio.
     // A cada estado le asociamos una descripción amigable para el usuario.
     PENDIENTE("Pendiente"),
-    EN_PROGRESO("En Progreso"),
+    EN_PROGRESO("En Proceso"),
     FINALIZADO("Finalizado"),
     CANCELADO("Cancelado");
 
