@@ -20,12 +20,12 @@ import java.util.Vector;
 
 public class VistaPrincipal {
 
-    // --- ATRIBUTOS DE ESTADO ---
+    //Atributos - Caracteristicas - Propiedades
     private Integer idServicioSeleccionado = null;
     private Cliente clienteSeleccionado = null;
     private final Empresa miEmpresa;
 
-    // --- COMPONENTES SWING ---
+    //Atributos - Componentes SWING
     private JPanel rootPanel;
     private JTabbedPane tabbedPane;
     private JPanel panelRegistrar;
@@ -53,22 +53,22 @@ public class VistaPrincipal {
     private JButton btnBuscar;
     private JButton btnMostrarTodos;
 
+
+    //Metodos - Funciones
     public VistaPrincipal() {
         this.miEmpresa = new Empresa("Cerrajería 24 horas");
         inicializarComponentesVisuales();
         agregarListeners();
-        cargarServicios(null); // Carga inicial de todos los servicios
+        cargarServicios(null);
     }
 
     private void inicializarComponentesVisuales() {
-        // --- Configuración de Spinners ---
         spinnerFecha.setModel(new SpinnerDateModel());
         spinnerFecha.setEditor(new JSpinner.DateEditor(spinnerFecha, "dd/MM/yyyy"));
         spinnerHora.setModel(new SpinnerDateModel());
         spinnerHora.setEditor(new JSpinner.DateEditor(spinnerHora, "hh:mm a"));
         spinnerValorServicio.setModel(new SpinnerNumberModel(50000.0, 0.0, 10000000.0, 1000.0));
 
-        // --- Configuración de ComboBoxes con tus opciones ---
         comboTipoServicio.setModel(new DefaultComboBoxModel<>(new String[]{
                 "Seleccionar", "Apertura de automóvil", "Apertura de caja fuerte",
                 "Apertura de candado", "Apertura de motocicleta", "Apertura de puerta residencial",
@@ -79,31 +79,28 @@ public class VistaPrincipal {
         comboMunicipio.setModel(new DefaultComboBoxModel<>(new String[]{"Seleccionar", "Bucaramanga", "Floridablanca", "Piedecuesta"}));
         comboMetodoPago.setModel(new DefaultComboBoxModel<>(new String[]{"Efectivo", "Nequi"}));
 
-        // --- Carga de datos y configuración de apariencia ---
         cargarCerrajeros();
         configurarRenderers();
 
-        // --- CONFIGURACIÓN DE LA TABLA ---
         tablaServicios.setDefaultEditor(Object.class, null);
         tablaServicios.setAutoCreateRowSorter(true);
-        tablaServicios.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // Clave para el scroll horizontal
+        tablaServicios.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
-        reiniciarFormulario(); // Pone el formulario en su estado inicial
+        reiniciarFormulario();
     }
 
     private void ajustarAnchoColumnas() {
         TableColumnModel modeloColumna = tablaServicios.getColumnModel();
-        modeloColumna.getColumn(0).setPreferredWidth(40);  // ID
-        modeloColumna.getColumn(1).setPreferredWidth(90);  // Fecha
-        modeloColumna.getColumn(2).setPreferredWidth(200); // Tipo
-        modeloColumna.getColumn(3).setPreferredWidth(200); // Cliente
-        modeloColumna.getColumn(4).setPreferredWidth(200); // Cerrajero
-        modeloColumna.getColumn(5).setPreferredWidth(100); // Estado
-        modeloColumna.getColumn(6).setPreferredWidth(100); // Monto
+        modeloColumna.getColumn(0).setPreferredWidth(40);
+        modeloColumna.getColumn(1).setPreferredWidth(90);
+        modeloColumna.getColumn(2).setPreferredWidth(200);
+        modeloColumna.getColumn(3).setPreferredWidth(200);
+        modeloColumna.getColumn(4).setPreferredWidth(200);
+        modeloColumna.getColumn(5).setPreferredWidth(100);
+        modeloColumna.getColumn(6).setPreferredWidth(100);
     }
 
     private void configurarRenderers() {
-        // Para que el combo de cerrajeros muestre el nombre del objeto Cerrajero
         comboCerrajero.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -117,7 +114,6 @@ public class VistaPrincipal {
             }
         });
 
-        // Para que el combo de estados muestre la descripción legible del Enum
         comboEstado.setModel(new DefaultComboBoxModel<>(EstadoServicio.values()));
         comboEstado.setRenderer(new DefaultListCellRenderer() {
             @Override
@@ -147,23 +143,20 @@ public class VistaPrincipal {
     }
 
     private void agregarListeners() {
-        // --- CAMBIO: Habilita/Deshabilita campos de "Otro Cerrajero" ---
         comboCerrajero.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 boolean habilitarCamposOtro = "Otro".equals(e.getItem());
                 txtNombreOtroCerrajero.setEnabled(habilitarCamposOtro);
                 txtTelefonoOtroCerrajero.setEnabled(habilitarCamposOtro);
 
-                // Si se habilitan, pone el foco en el primer campo
                 if (habilitarCamposOtro) {
                     txtNombreOtroCerrajero.requestFocusInWindow();
-                } else { // Si no, los limpia
+                } else {
                     txtNombreOtroCerrajero.setText("");
                     txtTelefonoOtroCerrajero.setText("");
                 }
             }
         });
-        // --- FIN CAMBIO ---
 
         btnGuardarServicio.addActionListener(e -> guardarServicio());
         btnActualizar.addActionListener(e -> actualizarServicio());
@@ -209,12 +202,10 @@ public class VistaPrincipal {
         comboCerrajero.setSelectedIndex(0);
         comboEstado.setSelectedItem(EstadoServicio.PENDIENTE);
 
-        // --- CAMBIO: Campos de "Otro" cerrajero visibles pero deshabilitados ---
         txtNombreOtroCerrajero.setText("");
         txtTelefonoOtroCerrajero.setText("");
         txtNombreOtroCerrajero.setEnabled(false);
         txtTelefonoOtroCerrajero.setEnabled(false);
-        // --- FIN CAMBIO ---
 
         btnGuardarServicio.setVisible(true);
         btnActualizar.setVisible(false);
@@ -351,7 +342,7 @@ public class VistaPrincipal {
             }
 
             tablaServicios.setModel(modelo);
-            ajustarAnchoColumnas(); // Se ajustan las columnas después de que la tabla tiene datos
+            ajustarAnchoColumnas();
 
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(rootPanel, "Error al cargar los servicios: " + ex.getMessage(), "Error de Base de Datos", JOptionPane.ERROR_MESSAGE);
@@ -378,7 +369,6 @@ public class VistaPrincipal {
             comboMetodoPago.setSelectedItem(servicio.getMetodoPago());
             comboEstado.setSelectedItem(servicio.getEstado());
 
-            // --- CAMBIO: Lógica para manejar la selección de "Otro Cerrajero" ---
             boolean cerrajeroEncontrado = false;
             for (int i = 0; i < comboCerrajero.getItemCount(); i++) {
                 if (comboCerrajero.getItemAt(i) instanceof Cerrajero) {
@@ -392,20 +382,17 @@ public class VistaPrincipal {
             }
 
             if (cerrajeroEncontrado) {
-                // Si el cerrajero estaba en la lista, los campos "Otro" se deshabilitan y limpian
                 txtNombreOtroCerrajero.setText("");
                 txtTelefonoOtroCerrajero.setText("");
                 txtNombreOtroCerrajero.setEnabled(false);
                 txtTelefonoOtroCerrajero.setEnabled(false);
             } else {
-                // Si no estaba en la lista, era un "Otro". Se seleccionan y habilitan los campos.
                 comboCerrajero.setSelectedItem("Otro");
                 txtNombreOtroCerrajero.setText(servicio.getCerrajero().getNombre());
                 txtTelefonoOtroCerrajero.setText(servicio.getCerrajero().getTelefono());
                 txtNombreOtroCerrajero.setEnabled(true);
                 txtTelefonoOtroCerrajero.setEnabled(true);
             }
-            // --- FIN CAMBIO ---
 
             btnGuardarServicio.setVisible(false);
             btnActualizar.setVisible(true);

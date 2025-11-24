@@ -5,23 +5,15 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-/**
- * ==================================================================
- * CLASE Cliente
- * ==================================================================
- * Representa a un cliente en el sistema. Esta clase "hereda" de la
- * clase `Persona`, lo que significa que automáticamente tiene los atributos
- * y métodos de `Persona` (nombre y teléfono) y añade los suyos propios.
- */
 public class Cliente extends Persona {
 
+    //Atributos - Caracteristicas - Propiedades
     private Long idCliente;
     private String direccion;
     private String ciudad;
 
-    /**
-     * --- CONSTRUCTOR (Para clientes existentes) ---
-     */
+
+    //Métodos - Funciones
     public Cliente(Long idCliente, String nombre, String telefono, String direccion, String ciudad) {
         super(nombre, telefono);
         this.idCliente = idCliente;
@@ -29,9 +21,6 @@ public class Cliente extends Persona {
         this.ciudad = ciudad;
     }
 
-    /**
-     * --- CONSTRUCTOR (Para clientes nuevos) ---
-     */
     public Cliente(String nombre, String telefono, String direccion, String ciudad) {
         super(nombre, telefono);
         this.direccion = direccion;
@@ -69,8 +58,6 @@ public class Cliente extends Persona {
         }
     }
 
-    // --- GETTERS Y SETTERS ---
-
     public Long getIdCliente() {
         return idCliente;
     }
@@ -87,7 +74,6 @@ public class Cliente extends Persona {
         return ciudad;
     }
 
-    // *** MÉTODOS AÑADIDOS PARA CORREGIR EL ERROR ***
     public void setDireccion(String direccion) {
         this.direccion = direccion;
     }
